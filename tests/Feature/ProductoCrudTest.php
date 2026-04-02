@@ -122,12 +122,16 @@ class ProductoCrudTest extends TestCase
     #[Test]
     public function api_buscar_productos_retorna_resultados(): void
     {
-        Producto::factory()->create(['nombre' => 'Maca Premium', 'activo' => true]);
+        // La API buscar() filtra solo tipo='natural' → crear producto con ese tipo
+        Producto::factory()->create([
+            'nombre' => 'Maca Premium',
+            'activo' => true,
+            'tipo'   => 'natural',
+        ]);
 
         $response = $this->actingAs($this->admin)->getJson('/api/productos/buscar?q=Maca');
 
         $response->assertStatus(200);
-        // La API retorna un array de productos directamente
         $response->assertJsonFragment(['nombre' => 'Maca Premium']);
     }
 

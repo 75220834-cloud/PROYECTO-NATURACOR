@@ -1,5 +1,11 @@
 # 🌿 NATURACOR — Sistema Web Empresarial
 
+![Tests CI/CD](https://github.com/75220834-cloud/PROYECTO-NATURACOR/actions/workflows/tests.yml/badge.svg)
+![PHP](https://img.shields.io/badge/PHP-8.2-blue?logo=php)
+![Laravel](https://img.shields.io/badge/Laravel-12-red?logo=laravel)
+![Tests](https://img.shields.io/badge/Tests-125%2B-brightgreen?logo=phpunit)
+
+
 > Sistema de Gestión Integral para Tiendas Naturistas con Módulo de Consultoría Inteligente y Recomendación de Productos basado en el Perfil de Salud del Cliente.
 
 **Curso:** Pruebas y Calidad de Software  

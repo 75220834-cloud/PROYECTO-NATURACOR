@@ -1,47 +1,61 @@
-name: Tests
+name: NATURACOR — Tests CI/CD
 
 on:
   push:
-    branches:
-      - master
-      - '*.x'
+    branches: [ main, master ]
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
-
-permissions:
-  contents: read
+    branches: [ main, master ]
 
 jobs:
   tests:
+    name: 🧪 PHP Tests (Laravel)
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: true
-      matrix:
-        php: [8.2, 8.3, 8.4]
-
-    name: PHP ${{ matrix.php }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: 🐘 Configurar PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, pdo, sqlite3, pdo_sqlite, bcmath, json, xml, curl
           coverage: none
 
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: 📋 Verificar versión PHP
+        run: php --version
 
-      - name: Copy environment file
-        run: cp .env.example .env
+      - name: 📦 Cache de dependencias Composer
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
-      - name: Generate app key
-        run: php artisan key:generate
+      - name: 🔧 Instalar dependencias
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Execute tests
-        run: php artisan test
+      - name: ⚙️ Configurar entorno de testing
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: 🗄️ Configurar base de datos SQLite en memoria
+        run: |
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+
+      - name: 🚀 Ejecutar migraciones
+        run: php artisan migrate --force --env=testing
+
+      - name: ✅ Ejecutar todos los tests
+        run: php artisan test --env=testing
+
+      - name: 📊 Resumen de tests
+        if: always()
+        run: |
+          echo "====================================="
+          echo "  NATURACOR - Resultado de Tests     "
+          echo "====================================="
+          php artisan test --env=testing 2>&1 | tail -5

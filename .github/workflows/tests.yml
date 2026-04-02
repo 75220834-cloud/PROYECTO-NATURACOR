@@ -22,9 +22,6 @@ jobs:
           extensions: mbstring, dom, fileinfo, pdo, sqlite3, pdo_sqlite, bcmath, json, xml, curl
           coverage: none
 
-      - name: 📋 Verificar versión PHP
-        run: php --version
-
       - name: 📦 Cache de dependencias Composer
         uses: actions/cache@v3
         with:
@@ -36,26 +33,17 @@ jobs:
       - name: 🔧 Instalar dependencias
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: ⚙️ Configurar entorno de testing
+      - name: ⚙️ Configurar entorno
         run: |
           cp .env.example .env
           php artisan key:generate
-
-      - name: 🗄️ Configurar base de datos SQLite en memoria
-        run: |
+          # Forzar SQLite y session array para tests (phpunit.xml también lo hace)
           echo "DB_CONNECTION=sqlite" >> .env
           echo "DB_DATABASE=:memory:" >> .env
-
-      - name: 🚀 Ejecutar migraciones
-        run: php artisan migrate --force --env=testing
+          echo "SESSION_DRIVER=array" >> .env
+          echo "CACHE_STORE=array" >> .env
+          echo "QUEUE_CONNECTION=sync" >> .env
+          echo "MAIL_MAILER=array" >> .env
 
       - name: ✅ Ejecutar todos los tests
-        run: php artisan test --env=testing
-
-      - name: 📊 Resumen de tests
-        if: always()
-        run: |
-          echo "====================================="
-          echo "  NATURACOR - Resultado de Tests     "
-          echo "====================================="
-          php artisan test --env=testing 2>&1 | tail -5
+        run: php artisan test

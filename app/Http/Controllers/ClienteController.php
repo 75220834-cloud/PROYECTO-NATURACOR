@@ -10,7 +10,15 @@ class ClienteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Cliente::withCount('ventas')->withSum('ventas', 'total');
+        $query = Cliente::withCount('ventas')
+            ->withSum('ventas', 'total')
+            ->addSelect([
+                // Total gastado en productos naturales (detalles de venta)
+                'total_productos' => \App\Models\DetalleVenta::selectRaw('COALESCE(SUM(detalle_ventas.subtotal), 0)')
+                    ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
+                    ->whereColumn('ventas.cliente_id', 'clientes.id')
+                    ->where('ventas.estado', 'completada'),
+            ]);
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('dni', 'like', "%{$request->search}%")

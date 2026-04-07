@@ -15,19 +15,32 @@ class CordialVenta extends Model
     public function empleadoInvita() { return $this->belongsTo(User::class, 'empleado_invita_id'); }
 
     public static $precios = [
-        'tienda_s3' => 3, 'tienda_s5' => 5,
-        'llevar_s3' => 3, 'llevar_s5' => 5,
-        'litro_especial_s40' => 40, 'litro_puro_s80' => 80,
-        'invitado' => 0,
+        'tienda_s3'            => 3,
+        'tienda_s5'            => 5,
+        'llevar_s3'            => 3,
+        'llevar_s5'            => 5,
+        'litro_especial_s40'   => 40,
+        'medio_litro_especial' => 20,   // Nuevo: Medio Litro Especial S/20
+        'litro_puro_s80'       => 80,
+        'medio_litro_puro'     => 40,   // Nuevo: Medio Litro Puro S/40
+        'invitado'             => 0,
     ];
 
     public static $labels = [
-        'tienda_s3' => 'Consumo en tienda S/3',
-        'tienda_s5' => 'Consumo en tienda S/5',
-        'llevar_s3' => 'Para llevar S/3',
-        'llevar_s5' => 'Para llevar S/5',
-        'litro_especial_s40' => 'Litro especial S/40',
-        'litro_puro_s80' => 'Litro puro S/80',
-        'invitado' => 'Invitado (gratis)',
+        'tienda_s3'            => 'Consumo en tienda S/3',
+        'tienda_s5'            => 'Consumo en tienda S/5',
+        'llevar_s3'            => 'Para llevar S/3',
+        'llevar_s5'            => 'Para llevar S/5',
+        'litro_especial_s40'   => 'Litro especial S/40',
+        'medio_litro_especial' => 'Medio Litro Especial S/20',
+        'litro_puro_s80'       => 'Litro puro S/80',
+        'medio_litro_puro'     => 'Medio Litro Puro S/40',
+        'invitado'             => 'Invitado (gratis)',
+    ];
+
+    /** Tipos que acumulan para la Regla 2 de fidelización (solo vasos y litro especial) */
+    public static $tiposAcumulanCordiales = [
+        'tienda_s3', 'tienda_s5', 'llevar_s3', 'llevar_s5',
+        'litro_especial_s40',
     ];
 }

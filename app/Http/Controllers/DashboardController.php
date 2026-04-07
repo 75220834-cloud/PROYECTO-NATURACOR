@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Venta;
 use App\Models\Producto;
 use App\Models\CajaSesion;
+use App\Models\FidelizacionCanje;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -61,10 +62,15 @@ class DashboardController extends Controller
             ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
             ->sum('total');
 
+        // Premios pendientes de fidelización
+        $premiosPendientes = FidelizacionCanje::where('entregado', false)
+            ->where('tipo_regla', 'regla1_500')
+            ->count();
+
         return view('dashboard.index', compact(
             'totalHoy', 'countHoy', 'ingresosPorMetodo',
             'masVendidos', 'ventasSemana', 'stockBajo',
-            'cajaActiva', 'totalMes'
+            'cajaActiva', 'totalMes', 'premiosPendientes'
         ));
     }
 }

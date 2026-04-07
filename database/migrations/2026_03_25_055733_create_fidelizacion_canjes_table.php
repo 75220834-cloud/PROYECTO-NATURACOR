@@ -12,9 +12,14 @@ return new class extends Migration {
             $table->unsignedBigInteger('cliente_id');
             $table->unsignedBigInteger('venta_id')->nullable();
             $table->unsignedBigInteger('producto_id')->nullable();
-            $table->enum('tipo_regla', ['regla1_250', 'regla2_litro40', 'regla2_litro80']);
+            // String en lugar de enum para compatibilidad SQLite (tests)
+            // Valores válidos: regla1_500, regla2_500_cordial
+            $table->string('tipo_regla');
             $table->decimal('valor_premio', 10, 2)->default(0);
             $table->string('descripcion')->nullable();
+            $table->string('descripcion_premio')->nullable(); // Descripción del premio 2026
+            $table->boolean('entregado')->default(false);     // Si el empleado entregó el premio
+            $table->timestamp('entregado_at')->nullable();    // Cuándo fue entregado
             $table->timestamps();
         });
     }

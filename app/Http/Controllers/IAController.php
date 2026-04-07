@@ -9,6 +9,7 @@ use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class IAController extends Controller
@@ -16,8 +17,19 @@ class IAController extends Controller
     public function index()
     {
         $analisis = $this->analizarNegocio();
-        $tieneApiKey = !empty(env('GEMINI_API_KEY')) || !empty(env('GROQ_API_KEY'));
+        $groqKey  = config('naturacor.groq_api_key');
+        $geminiKey = config('naturacor.gemini_api_key');
+        $tieneApiKey = !empty($groqKey) || !empty($geminiKey);
         $modoOnline  = $tieneApiKey && $this->verificarConexion();
+
+        // Debug: log para verificar detección de API keys
+        Log::info('IA index - API key check', [
+            'groq_key_present'   => !empty($groqKey),
+            'gemini_key_present' => !empty($geminiKey),
+            'tiene_api_key'      => $tieneApiKey,
+            'modo_online'        => $modoOnline,
+        ]);
+
         return view('ia.index', compact('analisis', 'modoOnline'));
     }
 
@@ -27,16 +39,21 @@ class IAController extends Controller
         $analisis = $this->analizarNegocio();
 
         // 1. Intentar Groq primero (Llama 3 — api.groq.com)
-        $apiKeyGroq = env('GROQ_API_KEY');
+        $apiKeyGroq = config('naturacor.groq_api_key');
+        Log::info('IA analizar - Groq check', [
+            'key_present' => !empty($apiKeyGroq),
+            'key_length'  => strlen($apiKeyGroq ?? ''),
+        ]);
         if (!empty($apiKeyGroq)) {
             $respuesta = $this->consultarGroq($consulta, $analisis);
             if ($respuesta) {
                 return response()->json(['modo' => 'online', 'resultado' => $respuesta, 'analisis' => $analisis]);
             }
+            Log::warning('IA analizar - Groq returned null, falling through to Gemini');
         }
 
         // 2. Intentar Gemini como alternativa
-        $apiKeyGemini = env('GEMINI_API_KEY');
+        $apiKeyGemini = config('naturacor.gemini_api_key');
         if (!empty($apiKeyGemini)) {
             $respuesta = $this->consultarGemini($consulta, $analisis);
             if ($respuesta) {
@@ -58,7 +75,7 @@ class IAController extends Controller
     {
         try {
             $contexto = $this->formatearContexto($analisis);
-            $apiKey   = env('GEMINI_API_KEY');
+            $apiKey   = config('naturacor.gemini_api_key');
 
             $systemInstruction =
                 "Eres NATURA, una inteligencia artificial avanzada integrada al sistema NATURACOR. " .
@@ -69,9 +86,9 @@ class IAController extends Controller
                 "Datos actuales del negocio NATURACOR:\n{$contexto}";
 
             $response = Http::withOptions([
-                'verify'          => false,
                 'connect_timeout' => 10,
                 'timeout'         => 30,
+                'verify'          => false, // XAMPP/Windows SSL fix
             ])->post(
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}",
                 [
@@ -93,14 +110,14 @@ class IAController extends Controller
             }
 
             // Log del error para debug
-            \Illuminate\Support\Facades\Log::error('Gemini API error', [
+            Log::error('Gemini API error', [
                 'status' => $response->status(),
                 'body'   => substr($response->body(), 0, 500),
             ]);
             return null;
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Gemini exception: ' . $e->getMessage());
+            Log::error('Gemini exception: ' . $e->getMessage());
             return null;
         }
     }
@@ -118,20 +135,13 @@ class IAController extends Controller
                 "Siempre responde en español.\n\n" .
                 "Datos actuales del negocio NATURACOR (úsalos si son relevantes):\n{$contexto}";
 
-            $certPath = 'C:/xampp/php/cacert.pem';
-            $verifyOpt = file_exists($certPath) ? $certPath : false;
-
             $response = Http::withOptions([
-                'verify'          => $verifyOpt,
                 'connect_timeout' => 10,
                 'timeout'         => 30,
-                'curl'            => [
-                    CURLOPT_CONNECTTIMEOUT => 10,
-                    CURLOPT_TIMEOUT        => 30,
-                ],
+                'verify'          => false, // XAMPP/Windows SSL fix
             ])
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . env('GROQ_API_KEY'),
+                    'Authorization' => 'Bearer ' . config('naturacor.groq_api_key'),
                     'Content-Type'  => 'application/json',
                 ])
                 ->post('https://api.groq.com/openai/v1/chat/completions', [
@@ -147,13 +157,13 @@ class IAController extends Controller
             if ($response->successful()) {
                 return $response->json('choices.0.message.content') ?? null;
             }
-            \Illuminate\Support\Facades\Log::error('Groq error', [
+            Log::error('Groq error', [
                 'status' => $response->status(),
                 'body'   => substr($response->body(), 0, 300),
             ]);
             return null;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Groq exception: ' . $e->getMessage());
+            Log::error('Groq exception: ' . $e->getMessage());
             return null;
         }
     }
@@ -340,10 +350,18 @@ class IAController extends Controller
     private function verificarConexion(): bool
     {
         try {
-            Http::timeout(3)->get('https://www.google.com');
+            $response = Http::withOptions(['verify' => false, 'timeout' => 5])
+                ->get('https://api.groq.com');
             return true;
         } catch (\Exception $e) {
-            return false;
+            try {
+                Http::withOptions(['verify' => false, 'timeout' => 3])
+                    ->get('https://www.google.com');
+                return true;
+            } catch (\Exception $e2) {
+                Log::warning('IA - No internet connection detected: ' . $e2->getMessage());
+                return false;
+            }
         }
     }
 }

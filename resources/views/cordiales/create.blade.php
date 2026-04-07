@@ -18,6 +18,24 @@
                 <form method="POST" action="{{ route('cordiales.store') }}" id="formCordial">
                     @csrf
 
+                    {{-- Cliente (opcional) --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">👤 Cliente (DNI)</label>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="clienteDni" class="form-control rounded-3" placeholder="DNI del cliente" maxlength="15">
+                            <button type="button" class="btn btn-outline-success btn-sm px-3" onclick="buscarClienteCordial()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div id="clienteInfo" class="mt-2" style="display:none;">
+                            <div style="background:#f0fdf4; border-radius:8px; padding:8px 12px; font-size:13px;">
+                                <span id="clienteNombre" style="font-weight:600; color:#15803d;"></span>
+                                <span id="clienteFidelizacion" class="ms-2"></span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="cliente_id" id="clienteId" value="">
+                    </div>
+
                     {{-- Tipo de cordial --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Tipo de Cordial <span class="text-danger">*</span></label>
@@ -157,5 +175,31 @@
         document.getElementById('motivoInvitadoDiv').style.display = cb.checked ? 'block' : 'none';
         calcularTotal();
     }
+
+    function buscarClienteCordial() {
+        const dni = document.getElementById('clienteDni').value.trim();
+        if (!dni) return;
+        fetch(`/api/clientes/dni?dni=${dni}`, {
+            headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.found) {
+                document.getElementById('clienteId').value = data.cliente.id;
+                document.getElementById('clienteNombre').textContent = data.cliente.nombre + ' ' + (data.cliente.apellido || '');
+                const montoNat = parseFloat(data.cliente.acumulado_naturales || 0);
+                document.getElementById('clienteFidelizacion').textContent = montoNat > 0 ? `💚 Acum: S/${montoNat.toFixed(2)}/500` : '';
+                document.getElementById('clienteInfo').style.display = '';
+            } else {
+                alert('Cliente no encontrado.');
+                document.getElementById('clienteId').value = '';
+                document.getElementById('clienteInfo').style.display = 'none';
+            }
+        });
+    }
+
+    document.getElementById('clienteDni').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarClienteCordial(); }
+    });
 </script>
 @endsection

@@ -122,6 +122,11 @@ class ReclamoController extends Controller
      */
     public function destroy(Reclamo $reclamo)
     {
+        // BUG #9 FIX: Solo admin puede eliminar reclamos
+        if (!auth()->user()->hasRole('admin')) {
+            abort(403, 'Solo el administrador puede eliminar reclamos.');
+        }
+
         $reclamo->delete();
         return redirect()->route('reclamos.index')
             ->with('success', 'Reclamo eliminado.');

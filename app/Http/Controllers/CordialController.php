@@ -52,6 +52,7 @@ class CordialController extends Controller
             'es_invitado'        => 'nullable|boolean',
             'motivo_invitado'    => 'nullable|string|max:255',
             'metodo_pago'        => 'required|string',
+            'cliente_id'         => 'nullable|exists:clientes,id',
         ]);
 
         DB::beginTransaction();
@@ -63,8 +64,12 @@ class CordialController extends Controller
                 ->where('user_id', auth()->id())
                 ->first();
 
+            $clienteId = $data['cliente_id'] ?? null;
+            $cliente   = $clienteId ? \App\Models\Cliente::find($clienteId) : null;
+
             // Crear venta contenedora
             $venta = Venta::create([
+                'cliente_id'     => $clienteId,
                 'user_id'        => auth()->id(),
                 'sucursal_id'    => $sucursalId,
                 'subtotal'       => $precio * $data['cantidad'],
@@ -88,6 +93,22 @@ class CordialController extends Controller
                 'empleado_invita_id'=> auth()->id(),
                 'motivo_invitado'   => $data['motivo_invitado'] ?? null,
             ]);
+
+            // Promo: litro puro S/80 → 1 toma llevar_s5 gratis por unidad comprada
+            if (!$esInvitado && $data['tipo'] === 'litro_puro_s80') {
+                for ($i = 0; $i < $data['cantidad']; $i++) {
+                    CordialVenta::create([
+                        'venta_id'          => $venta->id,
+                        'tipo'              => 'llevar_s5',
+                        'precio'            => 0,
+                        'cantidad'          => 1,
+                        'es_invitado'       => true,
+                        'empleado_invita_id'=> auth()->id(),
+                        'motivo_invitado'   => 'Promo: 1 toma gratis por litro puro S/80',
+                    ]);
+                }
+            }
+
 
             // Actualizar caja
             if ($cajaActiva && $precio > 0) {

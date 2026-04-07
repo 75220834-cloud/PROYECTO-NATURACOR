@@ -12,7 +12,7 @@ class Producto extends Model
 
     protected $fillable = [
         'nombre', 'descripcion', 'precio', 'stock', 'stock_minimo',
-        'tipo', 'frecuente', 'activo', 'imagen', 'sucursal_id',
+        'tipo', 'frecuente', 'activo', 'imagen', 'sucursal_id', 'codigo_barras',
     ];
 
     protected $casts = [

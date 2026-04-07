@@ -43,9 +43,13 @@
 <div class="pos-container">
     <!-- Catálogo izquierdo -->
     <div class="pos-left">
-        <!-- Búsqueda -->
+        <!-- Búsqueda + Escáner -->
         <div class="mb-3">
-            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Buscar producto por nombre...">
+            <div class="d-flex gap-2">
+                <input type="text" id="searchInput" class="search-bar flex-grow-1" placeholder="🔍 Buscar producto por nombre...">
+                <input type="text" id="barcodeInput" class="search-bar" style="max-width:220px; border-color:#818cf8;" placeholder="📷 Escáner código barras" autofocus>
+            </div>
+            <small class="text-muted" style="font-size:11px;"><i class="bi bi-upc-scan me-1"></i>Escanea un código de barras o escribe el código y presiona Enter</small>
         </div>
 
         <!-- Botones frecuentes -->
@@ -58,11 +62,6 @@
                     {{ $p->nombre }} — S/{{ number_format($p->precio, 2) }}
                 </button>
                 @endforeach
-
-                <!-- Cordial especial -->
-                <button class="frecuente-btn" style="background: #fdf2f8; border-color: #f9a8d4; color: #9d174d;" data-bs-toggle="modal" data-bs-target="#cordialModal">
-                    🍹 Venta Cordial
-                </button>
             </div>
         </div>
         @endif
@@ -157,55 +156,11 @@
     </div>
 </div>
 
-<!-- Modal Cordial -->
-<div class="modal fade" id="cordialModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:20px; border:none;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-radius:20px 20px 0 0; border-bottom: 1px solid #f9a8d4;">
-                <h5 class="modal-title" style="color: #9d174d;">🍹 Venta de Cordial</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="form-label fw-600" style="font-size:13px;">Tipo de venta</label>
-                    <select id="cordialTipo" class="form-select nc-input" onchange="updateCordialPrecio()">
-                        @foreach(\App\Models\CordialVenta::$labels as $k => $label)
-                        <option value="{{ $k }}" data-precio="{{ \App\Models\CordialVenta::$precios[$k] }}">{{ $label }} — S/{{ \App\Models\CordialVenta::$precios[$k] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-600" style="font-size:13px;">Cantidad</label>
-                    <input type="number" id="cordialCantidad" class="nc-input form-control" value="1" min="1">
-                </div>
-                <div id="invitadoSection" style="display:none;">
-                    <div class="alert" style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 10px; font-size: 13px;">
-                        <strong>⚠️ Invitado:</strong> Registrar responsable y motivo.
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label fw-600" style="font-size:13px;">Motivo</label>
-                        <input type="text" id="cordialMotivo" class="nc-input form-control" placeholder="Ej: degustación, cortesía...">
-                    </div>
-                </div>
-                <div class="text-center mt-3">
-                    <span class="kpi-value">S/ <span id="cordialPrecioDisplay">3.00</span></span>
-                    <div class="text-muted" style="font-size:12px;">Total a cobrar</div>
-                </div>
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid #f9a8d4;">
-                <button class="btn btn-naturacor w-100 py-2" onclick="addCordialToCart()" data-bs-dismiss="modal" style="border-radius:10px; font-weight:600;">
-                    Agregar al carrito
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @section('scripts')
 <script>
 let cart = [];
-let cordialItems = [];
 
 // Buscar producto por texto
 document.getElementById('searchInput').addEventListener('input', function() {
@@ -216,7 +171,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
 });
 
 function addToCart(id, nombre, precio, stock) {
-    const existing = cart.find(i => i.id == id && !i.esCordial);
+    const existing = cart.find(i => i.id == id);
     if (existing) {
         if (existing.cantidad >= stock) { showToast('Stock insuficiente', 'warning'); return; }
         existing.cantidad++;
@@ -240,12 +195,11 @@ function renderCart() {
     const container = document.getElementById('cartItems');
     const empty = document.getElementById('cartEmpty');
 
-    // Eliminar solo los items (no el div de vacío)
     Array.from(container.children).forEach(child => {
         if (child.id !== 'cartEmpty') child.remove();
     });
 
-    if (cart.length === 0 && cordialItems.length === 0) {
+    if (cart.length === 0) {
         empty.style.display = '';
         updateTotals(0);
         return;
@@ -274,29 +228,11 @@ function renderCart() {
         container.appendChild(div);
     });
 
-    cordialItems.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'cart-item';
-        div.style.background = '#fdf2f8';
-        div.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="item-name" style="color:#9d174d;">🍹 ${item.label}</div>
-                <button onclick="removeCordial(${idx})" style="background:none;border:none;color:#dc2626;padding:0;font-size:16px;cursor:pointer;"><i class="bi bi-x-circle"></i></button>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-                <span style="font-size:12px; color:#6b7280;">x${item.cantidad}</span>
-                <span style="font-size:13px; font-weight:700; color:#9d174d;">S/ ${(item.precio * item.cantidad).toFixed(2)}</span>
-            </div>`;
-        container.appendChild(div);
-    });
-
-    const total = cart.reduce((s, i) => s + i.subtotal, 0) + cordialItems.reduce((s, i) => s + i.precio * i.cantidad, 0);
+    const total = cart.reduce((s, i) => s + i.subtotal, 0);
     updateTotals(total);
 }
 
-
 function updateTotals(total) {
-    // En Perú los precios ya INCLUYEN IGV → se extrae (no se suma)
     const igv = total * 18 / 118;
     const base = total - igv;
     document.getElementById('subtotalVal').textContent = base.toFixed(2);
@@ -318,8 +254,10 @@ function buscarCliente() {
             if (data.found) {
                 document.getElementById('clienteId').value = data.cliente.id;
                 document.getElementById('clienteNombre').textContent = data.cliente.nombre + ' ' + (data.cliente.apellido || '');
-                const monto = parseFloat(data.cliente.acumulado_naturales);
-                document.getElementById('clienteFidelizacion').textContent = monto > 0 ? `💚 Acumulado: S/${monto.toFixed(2)}` : '';
+                const montoNat = parseFloat(data.cliente.acumulado_naturales);
+                let fidelText = '';
+                if (montoNat > 0) fidelText += `💚 Acum: S/${montoNat.toFixed(2)}/500`;
+                document.getElementById('clienteFidelizacion').textContent = fidelText;
                 document.getElementById('clienteInfo').style.display = '';
             } else {
                 showToast('Cliente no encontrado. Puedes registrarlo en la sección de clientes.', 'warning');
@@ -329,29 +267,8 @@ function buscarCliente() {
         });
 }
 
-function updateCordialPrecio() {
-    const sel = document.getElementById('cordialTipo');
-    const precio = parseFloat(sel.options[sel.selectedIndex].dataset.precio);
-    const cant = parseInt(document.getElementById('cordialCantidad').value) || 1;
-    document.getElementById('cordialPrecioDisplay').textContent = (precio * cant).toFixed(2);
-    document.getElementById('invitadoSection').style.display = sel.value === 'invitado' ? '' : 'none';
-}
-
-function addCordialToCart() {
-    const sel = document.getElementById('cordialTipo');
-    const tipo = sel.value;
-    const precio = parseFloat(sel.options[sel.selectedIndex].dataset.precio);
-    const cantidad = parseInt(document.getElementById('cordialCantidad').value) || 1;
-    const motivo = document.getElementById('cordialMotivo').value;
-    const label = @json(\App\Models\CordialVenta::$labels)[tipo];
-    cordialItems.push({ tipo, precio, cantidad, motivo, label });
-    renderCart();
-}
-
-function removeCordial(idx) { cordialItems.splice(idx, 1); renderCart(); }
-
 function confirmarVenta() {
-    if (cart.length === 0 && cordialItems.length === 0) { showToast('Agrega productos al carrito', 'warning'); return; }
+    if (cart.length === 0) { showToast('Agrega productos al carrito', 'warning'); return; }
 
     const btn = document.querySelector('[onclick="confirmarVenta()"]');
     const origHtml = btn.innerHTML;
@@ -362,7 +279,6 @@ function confirmarVenta() {
         items: cart.map(i => ({ producto_id: i.id, cantidad: i.cantidad, descuento: i.descuento })),
         metodo_pago: document.getElementById('metodoPago').value,
         cliente_id: document.getElementById('clienteId').value || null,
-        cordial: cordialItems.map(c => ({ tipo: c.tipo, cantidad: c.cantidad, motivo_invitado: c.motivo })),
         _token: csrfToken
     };
 
@@ -375,12 +291,19 @@ function confirmarVenta() {
     .then(({ ok, data }) => {
         btn.disabled = false; btn.innerHTML = origHtml;
         if (data.success) {
-            cart = []; cordialItems = []; renderCart();
+            cart = []; renderCart();
             document.getElementById('clienteId').value = '';
             document.getElementById('clienteDni').value = '';
             document.getElementById('clienteInfo').style.display = 'none';
             showToast('¡Venta registrada! Boleta: ' + data.numero_boleta, 'success');
-            setTimeout(() => window.open('/boletas/' + data.venta_id, '_blank'), 800);
+            // Notificación de premio de fidelización
+            if (data.premio_generado && data.canjes && data.canjes.length > 0) {
+                setTimeout(() => {
+                    const premios = data.canjes.map(c => c.descripcion_premio).join(', ');
+                    showPremioAlert(premios);
+                }, 500);
+            }
+            setTimeout(() => window.open('/boletas/' + data.venta_id, '_blank'), 1200);
         } else {
             showToast(data.message || 'Error al procesar la venta', 'danger');
         }
@@ -392,7 +315,6 @@ function confirmarVenta() {
     });
 }
 
-
 function showToast(msg, type='success') {
     const d = document.createElement('div');
     const colors = { success: '#dcfce7', warning: '#fef3c7', danger: '#ffe4e6' };
@@ -402,7 +324,82 @@ function showToast(msg, type='success') {
     setTimeout(() => d.remove(), 3500);
 }
 
-document.getElementById('cordialCantidad').addEventListener('input', updateCordialPrecio);
 document.getElementById('clienteDni').addEventListener('keydown', function(e) { if(e.key === 'Enter') buscarCliente(); });
+
+// ===== ESCÁNER DE CÓDIGO DE BARRAS =====
+let barcodeBuffer = '';
+let barcodeTimer = null;
+const barcodeInput = document.getElementById('barcodeInput');
+
+barcodeInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const code = this.value.trim();
+        if (code.length >= 3) {
+            buscarPorBarcode(code);
+        }
+        this.value = '';
+    }
+});
+
+// Detectar entrada rápida del escáner (caracteres rápidos + Enter)
+document.addEventListener('keydown', function(e) {
+    // Si el foco está en otro input que no sea el de barcode, ignorar
+    const active = document.activeElement;
+    if (active && active.tagName === 'INPUT' && active.id !== 'barcodeInput') return;
+
+    if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+        e.preventDefault();
+        buscarPorBarcode(barcodeBuffer);
+        barcodeBuffer = '';
+        return;
+    }
+
+    if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        barcodeBuffer += e.key;
+        clearTimeout(barcodeTimer);
+        barcodeTimer = setTimeout(() => { barcodeBuffer = ''; }, 100);
+    }
+});
+
+function buscarPorBarcode(codigo) {
+    fetch(`/api/productos/barcode?codigo=${encodeURIComponent(codigo)}`, {
+        headers: {'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.found) {
+            const p = data.producto;
+            addToCart(p.id, p.nombre, parseFloat(p.precio), p.stock);
+            showToast(`✅ ${p.nombre} agregado al carrito`, 'success');
+        } else {
+            showToast(`❌ Producto no encontrado: ${codigo}`, 'warning');
+        }
+        barcodeInput.value = '';
+        barcodeInput.focus();
+    })
+    .catch(() => {
+        showToast('Error al buscar producto por código', 'danger');
+    });
+}
+
+function showPremioAlert(premios) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:white;border-radius:20px;padding:32px 40px;text-align:center;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:fadeIn 0.3s ease;">
+            <div style="font-size:56px;">\ud83c\udfc6</div>
+            <h3 style="color:#166534;font-weight:700;margin:12px 0 8px;">\u00a1Premio de Fidelizaci\u00f3n!</h3>
+            <p style="color:#374151;font-size:15px;">El cliente ha alcanzado S/500 en productos</p>
+            <div style="background:#dcfce7;border-radius:12px;padding:12px;margin:16px 0;font-weight:600;color:#166534;font-size:15px;">
+                \ud83c\udf81 ${premios}
+            </div>
+            <button onclick="this.closest('div').parentElement.remove()" style="background:#16a34a;color:white;border:none;padding:10px 28px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;">Entendido</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    setTimeout(() => { if(overlay.parentElement) overlay.remove(); }, 10000);
+}
 </script>
 @endsection
+

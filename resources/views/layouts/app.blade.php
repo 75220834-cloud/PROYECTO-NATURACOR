@@ -196,6 +196,11 @@
                 <i class="bi bi-cash-stack"></i> <span>Caja</span>
             </a>
         </div>
+        <div class="nav-item">
+            <a href="{{ route('fidelizacion.index') }}" class="{{ request()->routeIs('fidelizacion*') ? 'active' : '' }}">
+                <i class="bi bi-star-fill"></i> <span>Fidelización</span>
+            </a>
+        </div>
         <div class="nav-section">Información</div>
         <div class="nav-item">
             <a href="{{ route('reportes.index') }}" class="{{ request()->routeIs('reportes*') ? 'active' : '' }}">
@@ -227,7 +232,7 @@
         @endif
     </nav>
     <div style="padding: 16px 18px; border-top: 1px solid rgba(255,255,255,0.08);">
-        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">v1.0 — NATURACOR © 2025</div>
+        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">v1.0 — NATURACOR © 2026</div>
     </div>
 </aside>
 

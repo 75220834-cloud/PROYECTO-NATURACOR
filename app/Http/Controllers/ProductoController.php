@@ -97,4 +97,23 @@ class ProductoController extends Controller
 
         return response()->json($productos);
     }
+
+    // API para búsqueda por código de barras (escáner USB)
+    public function buscarBarcode(Request $request)
+    {
+        $codigo = $request->get('codigo');
+        if (!$codigo) {
+            return response()->json(['found' => false, 'message' => 'Código no proporcionado']);
+        }
+
+        $producto = Producto::where('activo', true)
+            ->where('codigo_barras', $codigo)
+            ->first(['id', 'nombre', 'precio', 'stock', 'codigo_barras']);
+
+        if ($producto) {
+            return response()->json(['found' => true, 'producto' => $producto]);
+        }
+
+        return response()->json(['found' => false, 'message' => 'Producto no encontrado con ese código']);
+    }
 }

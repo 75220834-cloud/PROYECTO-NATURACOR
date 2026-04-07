@@ -11,6 +11,9 @@
         <a href="{{ route('boletas.pdf', $venta) }}" class="btn btn-outline-danger btn-sm px-3" target="_blank">
             <i class="bi bi-file-pdf me-1"></i>PDF
         </a>
+        <a href="{{ route('boletas.ticket', $venta) }}" class="btn btn-outline-dark btn-sm px-3" target="_blank">
+            <i class="bi bi-printer me-1"></i>Ticket
+        </a>
         @if($venta->cliente?->telefono)
         <a href="{{ route('boletas.whatsapp', $venta) }}" class="btn btn-success btn-sm px-3" target="_blank">
             <i class="bi bi-whatsapp me-1"></i>WhatsApp

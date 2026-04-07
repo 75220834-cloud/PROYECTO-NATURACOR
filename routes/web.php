@@ -14,6 +14,7 @@ use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ReclamoController;
 use App\Http\Controllers\CordialController;
+use App\Http\Controllers\FidelizacionController;
 
 // Redirigir raíz al login
 Route::get('/', fn() => redirect('/login'));
@@ -31,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     // Productos
     Route::resource('productos', ProductoController::class);
     Route::get('/api/productos/buscar', [ProductoController::class, 'buscar'])->name('productos.buscar');
+    Route::get('/api/productos/barcode', [ProductoController::class, 'buscarBarcode'])->name('productos.barcode');
 
     // Clientes
     Route::resource('clientes', ClienteController::class);
@@ -51,6 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/boletas/{venta}', [BoletaController::class, 'show'])->name('boletas.show');
     Route::get('/boletas/{venta}/pdf', [BoletaController::class, 'pdf'])->name('boletas.pdf');
     Route::get('/boletas/{venta}/whatsapp', [BoletaController::class, 'whatsapp'])->name('boletas.whatsapp');
+    Route::get('/boletas/{venta}/ticket', [BoletaController::class, 'ticket'])->name('boletas.ticket');
 
     // Recetario
     Route::resource('recetario', RecetarioController::class);
@@ -66,6 +69,10 @@ Route::middleware(['auth'])->group(function () {
     // Cordiales
     Route::get('/cordiales/precios', [CordialController::class, 'precios'])->name('cordiales.precios');
     Route::resource('cordiales', CordialController::class)->only(['index', 'create', 'store']);
+
+    // Fidelización — Premios pendientes de entrega
+    Route::get('/fidelizacion', [FidelizacionController::class, 'index'])->name('fidelizacion.index');
+    Route::post('/fidelizacion/{canje}/entregar', [FidelizacionController::class, 'entregar'])->name('fidelizacion.entregar');
 
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {

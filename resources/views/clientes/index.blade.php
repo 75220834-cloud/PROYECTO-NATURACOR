@@ -45,7 +45,7 @@
                         <th>DNI</th>
                         <th>Teléfono</th>
                         <th class="text-center">Compras</th>
-                        <th class="text-end">Total Gastado</th>
+                        <th class="text-end">Total Productos</th>
                         <th class="text-center">Registro</th>
                         <th class="text-center">Acciones</th>
                     </tr>
@@ -69,8 +69,13 @@
                         <td class="text-center">
                             <span class="badge rounded-pill" style="background:#dcfce7;color:#15803d;">{{ $cliente->ventas_count }} ventas</span>
                         </td>
-                        <td class="text-end fw-semibold" style="color:#16a34a;">
-                            S/ {{ number_format($cliente->ventas_sum_total ?? 0, 2) }}
+                        <td class="text-end">
+                            <div class="fw-semibold" style="color:#16a34a;">
+                                S/ {{ number_format($cliente->total_productos ?? 0, 2) }}
+                            </div>
+                            @if(($cliente->acumulado_naturales ?? 0) > 0)
+                            <small class="text-muted">💚 Acum: S/{{ number_format($cliente->acumulado_naturales, 2) }}/500</small>
+                            @endif
                         </td>
                         <td class="text-center text-muted" style="font-size:12px;">
                             {{ $cliente->created_at->format('d/m/Y') }}

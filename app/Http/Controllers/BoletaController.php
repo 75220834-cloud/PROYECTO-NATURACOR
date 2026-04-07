@@ -23,11 +23,31 @@ class BoletaController extends Controller
         return $pdf->download("boleta-{$venta->numero_boleta}.pdf");
     }
 
+    /**
+     * Vista para impresión en impresora térmica (58mm / 80mm).
+     */
+    public function ticket(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto', 'cordialVentas']);
+        return view('boletas.ticket', compact('venta'));
+    }
+
     public function whatsapp(Venta $venta)
     {
         $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto']);
+
+        // BUG #10 FIX: Validar que el cliente tenga teléfono
+        $telefono = $venta->cliente?->telefono;
+        if (empty($telefono)) {
+            return back()->with('error', 'El cliente no tiene número de teléfono registrado para enviar por WhatsApp.');
+        }
+
         $texto = $this->generarTextoWhatsapp($venta);
-        $telefono = $venta->cliente?->telefono ?? '';
+        // Asegurar formato peruano +51
+        $telefono = preg_replace('/[^0-9]/', '', $telefono);
+        if (strlen($telefono) === 9) {
+            $telefono = '51' . $telefono;
+        }
         $url = "https://wa.me/{$telefono}?text=" . urlencode($texto);
         return redirect($url);
     }

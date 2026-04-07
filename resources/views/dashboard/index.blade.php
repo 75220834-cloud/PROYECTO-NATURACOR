@@ -54,6 +54,19 @@
     </div>
 </div>
 
+@if($premiosPendientes > 0)
+<div class="alert mb-4 d-flex align-items-center gap-3" style="border-radius:14px; border:2px solid #bbf7d0; background:linear-gradient(135deg,#dcfce7,#bbf7d0);">
+    <div style="font-size:28px;">🏆</div>
+    <div class="flex-grow-1">
+        <strong style="color:#166534;">¡{{ $premiosPendientes }} premio(s) pendiente(s) de entrega!</strong>
+        <div style="font-size:13px; color:#15803d;">Clientes que alcanzaron S/500 en productos y esperan su botella 2L de Nopal</div>
+    </div>
+    <a href="{{ route('fidelizacion.index') }}" class="btn btn-success btn-sm px-3" style="border-radius:10px; font-weight:600;">
+        <i class="bi bi-star-fill me-1"></i>Ver Fidelización
+    </a>
+</div>
+@endif
+
 <div class="row g-4 mb-4">
     <!-- Gráfico de ventas semana -->
     <div class="col-12 col-lg-8">

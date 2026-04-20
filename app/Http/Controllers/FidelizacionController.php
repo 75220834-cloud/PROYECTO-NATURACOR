@@ -77,6 +77,21 @@ class FidelizacionController extends Controller
             'entregado_at' => now(),
         ]);
 
-        return back()->with('success', "Premio '{$canje->descripcion_premio}' marcado como entregado para {$canje->cliente->nombreCompleto()}.");
+        // Reiniciar acumulado del cliente a 0 para que pueda ganar otro premio
+        $canje->cliente->update([
+            'acumulado_naturales' => 0,
+        ]);
+
+        // Descontar 1 unidad del producto Nopal 2L del inventario
+        $productoNopal = \App\Models\Producto::where('activo', true)
+            ->where('nombre', 'like', '%nopal%')
+            ->where('nombre', 'like', '%2%')
+            ->first();
+
+        if ($productoNopal && $productoNopal->stock > 0) {
+            $productoNopal->decrement('stock', 1);
+        }
+
+        return back()->with('success', "Premio '{$canje->descripcion_premio}' entregado a {$canje->cliente->nombreCompleto()}. Su acumulado se reinició a S/0 para un nuevo ciclo.");
     }
 }

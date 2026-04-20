@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Venta;
 use App\Models\Producto;
 use App\Models\CajaSesion;
+use App\Models\CajaMovimiento;
 use App\Models\FidelizacionCanje;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -26,6 +27,15 @@ class DashboardController extends Controller
         // Ingresos por método de pago hoy
         $ingresosPorMetodo = (clone $ventasHoy)->selectRaw('metodo_pago, SUM(total) as total')
             ->groupBy('metodo_pago')->pluck('total', 'metodo_pago');
+
+        // Egresos del día (movimientos manuales de caja tipo egreso)
+        $egresosHoy = CajaMovimiento::whereDate('created_at', $hoy)
+            ->where('tipo', 'egreso')
+            ->when($sucursalId, fn($q) => $q->whereHas('cajaSesion', fn($s) => $s->where('sucursal_id', $sucursalId)))
+            ->sum('monto');
+
+        // Efectivo neto = ventas - egresos
+        $efectivoNetoHoy = $totalHoy - $egresosHoy;
 
         // Productos más vendidos (últimos 30 días)
         $masVendidos = \App\Models\DetalleVenta::join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
@@ -70,7 +80,8 @@ class DashboardController extends Controller
         return view('dashboard.index', compact(
             'totalHoy', 'countHoy', 'ingresosPorMetodo',
             'masVendidos', 'ventasSemana', 'stockBajo',
-            'cajaActiva', 'totalMes', 'premiosPendientes'
+            'cajaActiva', 'totalMes', 'premiosPendientes',
+            'egresosHoy', 'efectivoNetoHoy'
         ));
     }
 }

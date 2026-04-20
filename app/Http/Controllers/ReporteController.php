@@ -7,6 +7,7 @@ use App\Models\DetalleVenta;
 use App\Models\Producto;
 use App\Models\User;
 use App\Models\Sucursal;
+use App\Models\CajaMovimiento;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -49,11 +50,30 @@ class ReporteController extends Controller
             'otros' => $ventas->whereNotIn('metodo_pago', ['efectivo', 'yape', 'plin'])->sum('total'),
         ];
 
+        // Egresos del mismo período
+        $egresosQuery = CajaMovimiento::with(['empleado', 'cajaSesion'])
+            ->where('tipo', 'egreso');
+
+        if (!auth()->user()->isAdmin()) {
+            $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
+        }
+        if ($request->fecha_desde) $egresosQuery->whereDate('created_at', '>=', $request->fecha_desde);
+        if ($request->fecha_hasta) $egresosQuery->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->sucursal_id) {
+            $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', $request->sucursal_id));
+        }
+        if ($request->user_id) $egresosQuery->where('user_id', $request->user_id);
+
+        $egresos = $egresosQuery->latest()->get();
+        $totalEgresos = $egresos->sum('monto');
+        $totales['egresos'] = $totalEgresos;
+        $totales['neto'] = $totales['total'] - $totalEgresos;
+
         if ($request->exportar === 'pdf') {
-            $pdf = Pdf::loadView('reportes.pdf', compact('ventas', 'totales', 'request'))->setPaper('a4', 'landscape');
+            $pdf = Pdf::loadView('reportes.pdf', compact('ventas', 'totales', 'egresos', 'request'))->setPaper('a4', 'landscape');
             return $pdf->download('reporte-ventas-' . now()->format('Ymd') . '.pdf');
         }
 
-        return view('reportes.resultado', compact('ventas', 'totales'));
+        return view('reportes.resultado', compact('ventas', 'totales', 'egresos'));
     }
 }

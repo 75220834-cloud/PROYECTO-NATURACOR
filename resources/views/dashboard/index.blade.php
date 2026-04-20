@@ -20,6 +20,18 @@
             </div>
             <div class="kpi-value">S/ {{ number_format($totalHoy, 2) }}</div>
             <div class="kpi-label">Ventas del día</div>
+            @if($egresosHoy > 0)
+                <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #d1fae5; font-size:12px;">
+                    <div class="d-flex justify-content-between text-danger">
+                        <span>Egresos:</span>
+                        <span style="font-weight:600;">- S/ {{ number_format($egresosHoy, 2) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1" style="color:#16a34a; font-weight:700;">
+                        <span>Neto:</span>
+                        <span>S/ {{ number_format($efectivoNetoHoy, 2) }}</span>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">

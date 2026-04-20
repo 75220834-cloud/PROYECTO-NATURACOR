@@ -213,6 +213,11 @@
             </a>
         </div>
         <div class="nav-item">
+            <a href="{{ route('reclamos.index') }}" class="{{ request()->routeIs('reclamos*') ? 'active' : '' }}">
+                <i class="bi bi-exclamation-circle"></i> <span>Reclamos</span>
+            </a>
+        </div>
+        <div class="nav-item">
             <a href="{{ route('ia.index') }}" class="{{ request()->routeIs('ia*') ? 'active' : '' }}">
                 <i class="bi bi-robot"></i> <span>Asistente IA</span>
             </a>

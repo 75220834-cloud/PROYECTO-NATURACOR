@@ -6,6 +6,7 @@ use App\Models\Producto;
 use App\Models\Venta;
 use App\Models\DetalleVenta;
 use App\Models\Cliente;
+use App\Models\Enfermedad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
@@ -335,16 +336,66 @@ class IAController extends Controller
                 ->selectRaw('metodo_pago, COUNT(*) as count, SUM(total) as total')
                 ->groupBy('metodo_pago')
                 ->get(),
+            // Catálogo completo de productos
+            'catalogo_productos' => Producto::where('activo', true)
+                ->orderBy('nombre')
+                ->get(['nombre', 'descripcion', 'precio', 'stock', 'stock_minimo']),
+            // Recetario: enfermedades con productos recomendados
+            'recetario' => Enfermedad::where('activa', true)
+                ->with(['productos' => fn($q) => $q->where('activo', true)])
+                ->get(),
+            // Clientes con acumulado de fidelización
+            'lista_clientes' => Cliente::orderByDesc('acumulado_naturales')
+                ->get(['nombre', 'apellido', 'dni', 'telefono', 'acumulado_naturales', 'frecuente']),
         ];
     }
 
     private function formatearContexto(array $analisis): string
     {
-        return "Ventas hoy: {$analisis['ventas_hoy']['count']} (S/{$analisis['ventas_hoy']['total']}). " .
-               "Esta semana: {$analisis['ventas_semana']['count']} (S/{$analisis['ventas_semana']['total']}). " .
-               "Este mes: {$analisis['ventas_mes']['count']} (S/{$analisis['ventas_mes']['total']}). " .
-               "Productos con stock bajo: {$analisis['stock_critico']->count()}. " .
-               "Clientes registrados: {$analisis['clientes_total']}.";
+        $ctx = "DATOS DEL NEGOCIO NATURACOR:\n";
+        $ctx .= "Ventas hoy: {$analisis['ventas_hoy']['count']} (S/{$analisis['ventas_hoy']['total']}). ";
+        $ctx .= "Esta semana: {$analisis['ventas_semana']['count']} (S/{$analisis['ventas_semana']['total']}). ";
+        $ctx .= "Este mes: {$analisis['ventas_mes']['count']} (S/{$analisis['ventas_mes']['total']}). ";
+        $ctx .= "Clientes registrados: {$analisis['clientes_total']}.\n\n";
+
+        // Catálogo de productos
+        $ctx .= "CATÁLOGO DE PRODUCTOS DISPONIBLES EN TIENDA:\n";
+        foreach ($analisis['catalogo_productos'] as $p) {
+            $estado = $p->stock <= $p->stock_minimo ? ' ⚠️STOCK BAJO' : '';
+            $ctx .= "- {$p->nombre}: S/{$p->precio} | Stock: {$p->stock} unidades{$estado}";
+            if ($p->descripcion) $ctx .= " | {$p->descripcion}";
+            $ctx .= "\n";
+        }
+
+        // Recetario
+        if ($analisis['recetario']->isNotEmpty()) {
+            $ctx .= "\nRECETARIO NATURACOR (enfermedades y productos recomendados):\n";
+            foreach ($analisis['recetario'] as $enfermedad) {
+                $ctx .= "Condición: {$enfermedad->nombre}";
+                if ($enfermedad->descripcion) $ctx .= " — {$enfermedad->descripcion}";
+                $ctx .= "\n";
+                foreach ($enfermedad->productos as $prod) {
+                    $ctx .= "  → Producto recomendado: {$prod->nombre} (S/{$prod->precio})";
+                    if ($prod->pivot->instrucciones) {
+                        $ctx .= " — Instrucciones: {$prod->pivot->instrucciones}";
+                    }
+                    $ctx .= "\n";
+                }
+            }
+        }
+
+        // Clientes y fidelización
+        $umbral = config('naturacor.fidelizacion_monto', 500);
+        $ctx .= "\nCLIENTES REGISTRADOS Y ACUMULADO DE FIDELIZACIÓN (meta: S/{$umbral} para premio):\n";
+        foreach ($analisis['lista_clientes'] as $c) {
+            $nombre = trim("{$c->nombre} {$c->apellido}");
+            $acum = number_format($c->acumulado_naturales, 2);
+            $falta = max(0, $umbral - $c->acumulado_naturales);
+            $estado = $c->acumulado_naturales >= $umbral ? ' 🏆 LISTO PARA PREMIO' : '';
+            $ctx .= "- {$nombre} (DNI: {$c->dni}): Acumulado S/{$acum} | Falta S/" . number_format($falta, 2) . " para premio{$estado}\n";
+        }
+
+        return $ctx;
     }
 
     private function verificarConexion(): bool

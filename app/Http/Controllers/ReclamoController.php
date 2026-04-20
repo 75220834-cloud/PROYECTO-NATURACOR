@@ -14,7 +14,7 @@ class ReclamoController extends Controller
     public function index(Request $request)
     {
         $query = Reclamo::with(['cliente', 'vendedor', 'sucursal'])
-            ->where('sucursal_id', auth()->user()->sucursal_id);
+            ->when(auth()->user()->sucursal_id, fn($q, $sid) => $q->where('sucursal_id', $sid));
 
         if ($request->estado) {
             $query->where('estado', $request->estado);
@@ -52,7 +52,7 @@ class ReclamoController extends Controller
         $reclamo = Reclamo::create([
             'cliente_id'  => $data['cliente_id'] ?? null,
             'vendedor_id' => auth()->id(),
-            'sucursal_id' => auth()->user()->sucursal_id,
+            'sucursal_id' => auth()->user()->sucursal_id ?? 1,
             'tipo'        => $data['tipo'],
             'descripcion' => $data['descripcion'],
             'estado'      => 'pendiente',
@@ -67,7 +67,7 @@ class ReclamoController extends Controller
             'registro_id'     => $reclamo->id,
             'datos_nuevos'    => ['tipo' => $reclamo->tipo, 'estado' => $reclamo->estado],
             'ip'              => request()->ip(),
-            'sucursal_id'     => auth()->user()->sucursal_id,
+            'sucursal_id'     => auth()->user()->sucursal_id ?? 1,
         ]);
 
         return redirect()->route('reclamos.index')

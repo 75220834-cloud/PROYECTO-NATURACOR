@@ -8,287 +8,146 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --green-deep: #0a1f0a;
-            --green-dark: #122112;
-            --green-mid: #1a3a1a;
-            --green-accent: #4ade80;
-            --green-light: #86efac;
-            --white: #ffffff;
-            --gray: #6b7280;
-        }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
             display: flex;
-            background: var(--green-deep);
+            align-items: center;
+            justify-content: center;
+            background: #041a04;
             overflow: hidden;
         }
 
-        /* === ONDAS ANIMADAS === */
-        .waves-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .wave {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 200%;
-            border-radius: 50% 50% 0 0;
-            animation: waveMove linear infinite;
-        }
-
-        .wave-1 {
-            height: 55vh;
-            background: radial-gradient(ellipse at center, rgba(34,197,94,0.12) 0%, rgba(34,197,94,0.04) 60%, transparent 100%);
-            animation-duration: 8s;
-            bottom: -10vh;
-        }
-
-        .wave-2 {
-            height: 45vh;
-            background: radial-gradient(ellipse at center, rgba(74,222,128,0.10) 0%, rgba(74,222,128,0.03) 60%, transparent 100%);
-            animation-duration: 12s;
-            animation-direction: reverse;
-            bottom: -15vh;
-        }
-
-        .wave-3 {
-            height: 35vh;
-            background: radial-gradient(ellipse at center, rgba(134,239,172,0.08) 0%, rgba(134,239,172,0.02) 60%, transparent 100%);
-            animation-duration: 16s;
-            bottom: -20vh;
-        }
-
-        .wave-4 {
-            height: 25vh;
-            background: radial-gradient(ellipse at center, rgba(22,163,74,0.15) 0%, rgba(22,163,74,0.04) 60%, transparent 100%);
-            animation-duration: 20s;
-            animation-direction: reverse;
-            bottom: -5vh;
-        }
-
-        @keyframes waveMove {
-            0% { transform: translateX(0) scaleY(1); }
-            50% { transform: translateX(-25%) scaleY(1.05); }
-            100% { transform: translateX(-50%) scaleY(1); }
-        }
-
-        /* Partículas flotantes */
-        .particles {
+        canvas {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            pointer-events: none;
             z-index: 0;
         }
 
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(74,222,128,0.15);
-            animation: floatUp linear infinite;
-        }
-
-        @keyframes floatUp {
-            0% { transform: translateY(100vh) scale(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 0.5; }
-            100% { transform: translateY(-10vh) scale(1); opacity: 0; }
-        }
-
-        /* === LAYOUT === */
-        .login-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 460px;
-            min-height: 100vh;
+        .login-container {
+            position: relative;
+            z-index: 10;
             width: 100%;
-            position: relative;
-            z-index: 1;
+            max-width: 440px;
+            padding: 20px;
         }
 
-        /* === LADO IZQUIERDO === */
-        .login-left {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 48px;
-            text-align: center;
-            position: relative;
+        .glass-card {
+            background: rgba(10, 30, 10, 0.55);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            border-radius: 24px;
+            padding: 48px 44px;
+            box-shadow:
+                0 0 0 1px rgba(74,222,128,0.05) inset,
+                0 40px 80px rgba(0,0,0,0.5),
+                0 0 60px rgba(34,197,94,0.08);
+            animation: cardIn 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .brand-logo {
-            width: 90px;
-            height: 90px;
-            border-radius: 24px;
-            background: linear-gradient(135deg, rgba(74,222,128,0.25), rgba(74,222,128,0.08));
-            border: 1.5px solid rgba(74,222,128,0.35);
-            font-size: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            box-shadow: 0 0 60px rgba(74,222,128,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
-            animation: logoPulse 4s ease-in-out infinite;
+            width: 72px; height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(74,222,128,0.3), rgba(34,197,94,0.15));
+            border: 1.5px solid rgba(74,222,128,0.4);
+            font-size: 36px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 30px rgba(74,222,128,0.25), 0 0 60px rgba(74,222,128,0.1);
+            animation: logoPulse 3s ease-in-out infinite;
         }
 
         @keyframes logoPulse {
-            0%, 100% { box-shadow: 0 0 60px rgba(74,222,128,0.15), inset 0 1px 0 rgba(255,255,255,0.1); }
-            50% { box-shadow: 0 0 80px rgba(74,222,128,0.3), inset 0 1px 0 rgba(255,255,255,0.1); }
+            0%, 100% { box-shadow: 0 0 30px rgba(74,222,128,0.25), 0 0 60px rgba(74,222,128,0.1); }
+            50% { box-shadow: 0 0 50px rgba(74,222,128,0.45), 0 0 100px rgba(74,222,128,0.2); }
         }
 
-        .brand-title {
+        .brand-name {
             font-family: 'Playfair Display', serif;
-            font-size: 52px;
+            font-size: 36px;
             font-weight: 900;
-            color: white;
-            letter-spacing: 4px;
-            line-height: 1;
-            animation: fadeInUp 1s ease both;
+            color: #ffffff;
+            text-align: center;
+            letter-spacing: 5px;
+            text-shadow: 0 0 30px rgba(74,222,128,0.3);
         }
 
-        .brand-divider {
-            width: 60px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--green-accent), transparent);
-            margin: 20px auto;
-            animation: fadeInUp 1s ease 0.2s both;
-        }
-
-        .brand-tagline {
-            font-size: 13px;
-            color: rgba(255,255,255,0.4);
-            font-weight: 300;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            animation: fadeInUp 1s ease 0.4s both;
-        }
-
-        .version-tag {
-            position: absolute;
-            bottom: 32px;
+        .brand-sub {
             font-size: 11px;
-            color: rgba(255,255,255,0.2);
-            letter-spacing: 1px;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* === LADO DERECHO === */
-        .login-right {
-            background: rgba(255,255,255,0.97);
-            backdrop-filter: blur(20px);
-            padding: 56px 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-shadow: -30px 0 80px rgba(0,0,0,0.4);
-            position: relative;
-            animation: slideInRight 0.8s ease both;
-        }
-
-        @keyframes slideInRight {
-            from { transform: translateX(40px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .login-right::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--green-accent), #16a34a, var(--green-accent));
-            background-size: 100% 200%;
-            animation: gradientSlide 3s ease infinite;
-        }
-
-        @keyframes gradientSlide {
-            0% { background-position: 0% 0%; }
-            50% { background-position: 0% 100%; }
-            100% { background-position: 0% 0%; }
-        }
-
-        .login-header {
-            margin-bottom: 36px;
-        }
-
-        .login-header h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--green-deep);
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            color: var(--gray);
-            font-size: 14px;
-            font-weight: 300;
-        }
-
-        .form-label-custom {
-            font-size: 12px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-            display: block;
+            font-weight: 400;
+            color: rgba(134,239,172,0.6);
+            text-align: center;
+            letter-spacing: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            margin-top: 6px;
+            margin-bottom: 32px;
         }
 
-        .input-wrapper {
-            position: relative;
-            margin-bottom: 20px;
+        .welcome-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 28px;
         }
 
-        .input-icon {
+        .field-group { margin-bottom: 18px; }
+
+        .field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(134,239,172,0.8);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .field-wrapper { position: relative; }
+
+        .field-icon {
             position: absolute;
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 16px;
+            color: rgba(74,222,128,0.6);
+            font-size: 15px;
             transition: color 0.2s;
+            pointer-events: none;
         }
 
         .nc-input {
             width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(74,222,128,0.25);
             border-radius: 12px;
-            border: 1.5px solid #e5e7eb;
             padding: 13px 16px 13px 44px;
             font-size: 14px;
             font-family: 'DM Sans', sans-serif;
-            transition: all 0.2s;
-            background: #fafafa;
-            color: #111827;
+            color: #ffffff;
+            transition: all 0.25s;
         }
+
+        .nc-input::placeholder { color: rgba(255,255,255,0.3); }
 
         .nc-input:focus {
-            border-color: var(--green-accent);
-            box-shadow: 0 0 0 3px rgba(74,222,128,0.12);
             outline: none;
-            background: white;
+            border-color: rgba(74,222,128,0.6);
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 0 3px rgba(74,222,128,0.1), 0 0 20px rgba(74,222,128,0.1);
         }
 
-        .nc-input:focus + .input-icon,
-        .input-wrapper:focus-within .input-icon {
-            color: #22c55e;
-        }
+        .error-msg { color: #f87171; font-size: 12px; margin-top: 6px; }
 
         .remember-row {
             display: flex;
@@ -302,25 +161,20 @@
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: var(--gray);
+            color: rgba(255,255,255,0.5);
             cursor: pointer;
         }
 
-        .remember-label input[type="checkbox"] {
-            accent-color: #22c55e;
-            width: 15px;
-            height: 15px;
-        }
+        .remember-label input { accent-color: #4ade80; }
 
         .forgot-link {
             font-size: 13px;
-            color: #22c55e;
+            color: rgba(134,239,172,0.8);
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s;
         }
 
-        .forgot-link:hover { color: #16a34a; }
+        .forgot-link:hover { color: #4ade80; }
 
         .btn-login {
             width: 100%;
@@ -337,85 +191,62 @@
             letter-spacing: 0.5px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 20px rgba(34,197,94,0.35), 0 0 40px rgba(34,197,94,0.15);
         }
 
-        .btn-login::after {
+        .btn-login::before {
             content: '';
             position: absolute;
-            top: 50%; left: 50%;
-            width: 0; height: 0;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.4s, height 0.4s;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
         }
 
-        .btn-login:hover::after {
-            width: 300px;
-            height: 300px;
-        }
+        .btn-login:hover::before { left: 100%; }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(22,163,74,0.4);
+            box-shadow: 0 8px 30px rgba(34,197,94,0.5), 0 0 60px rgba(34,197,94,0.2);
         }
 
-        .btn-login:active {
-            transform: translateY(0);
-        }
+        .btn-login:active { transform: translateY(0); }
 
         .alert-success {
-            background: #dcfce7;
-            border: 1px solid #bbf7d0;
-            color: #15803d;
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: #86efac;
             border-radius: 12px;
             font-size: 13px;
             padding: 12px 16px;
             margin-bottom: 20px;
         }
 
-        .error-msg {
-            color: #dc2626;
-            font-size: 12px;
-            margin-top: 6px;
+        .version {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
         }
 
-        @media(max-width: 768px) {
-            .login-wrapper { grid-template-columns: 1fr; }
-            .login-left { display: none; }
-            .login-right { min-height: 100vh; padding: 40px 28px; }
+        @media(max-width: 480px) {
+            .glass-card { padding: 36px 28px; }
+            .brand-name { font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
-<!-- Ondas animadas -->
-<div class="waves-container">
-    <div class="wave wave-1"></div>
-    <div class="wave wave-2"></div>
-    <div class="wave wave-3"></div>
-    <div class="wave wave-4"></div>
-</div>
+<canvas id="canvas"></canvas>
 
-<!-- Partículas -->
-<div class="particles" id="particles"></div>
-
-<div class="login-wrapper">
-    <!-- Lado izquierdo decorativo -->
-    <div class="login-left">
+<div class="login-container">
+    <div class="glass-card">
         <div class="brand-logo">🌿</div>
-        <div class="brand-title">NATURACOR</div>
-        <div class="brand-divider"></div>
-        <div class="brand-tagline">Sistema de gestión natural</div>
-        <div class="version-tag">v1.0</div>
-    </div>
+        <div class="brand-name">NATURACOR</div>
+        <div class="brand-sub">Sistema de Gestión Natural</div>
 
-    <!-- Formulario -->
-    <div class="login-right">
-        <div class="login-header">
-            <h3>Bienvenido a Naturacor</h3>
-            <p>Ingresa tus credenciales para continuar</p>
-        </div>
+        <div class="welcome-text">Bienvenido a Naturacor</div>
 
         @if(session('status'))
             <div class="alert-success">{{ session('status') }}</div>
@@ -424,38 +255,35 @@
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
-            <!-- Email -->
-            <div>
-                <label class="form-label-custom">Correo electrónico</label>
-                <div class="input-wrapper">
+            <div class="field-group">
+                <label class="field-label">Correo electrónico</label>
+                <div class="field-wrapper">
                     <input type="email" name="email" id="email"
                         value="{{ old('email') }}"
                         class="nc-input"
                         placeholder="correo@naturacor.com"
                         required autocomplete="email" autofocus>
-                    <i class="bi bi-envelope input-icon"></i>
+                    <i class="bi bi-envelope field-icon"></i>
                 </div>
                 @error('email')
                     <div class="error-msg">{{ $message }}</div>
                 @enderror
             </div>
 
-            <!-- Password -->
-            <div>
-                <label class="form-label-custom">Contraseña</label>
-                <div class="input-wrapper">
+            <div class="field-group">
+                <label class="field-label">Contraseña</label>
+                <div class="field-wrapper">
                     <input type="password" name="password" id="password"
                         class="nc-input"
                         placeholder="••••••••"
                         required autocomplete="current-password">
-                    <i class="bi bi-lock input-icon"></i>
+                    <i class="bi bi-lock field-icon"></i>
                 </div>
                 @error('password')
                     <div class="error-msg">{{ $message }}</div>
                 @enderror
             </div>
 
-            <!-- Remember + Forgot -->
             <div class="remember-row">
                 <label class="remember-label">
                     <input type="checkbox" name="remember">
@@ -471,25 +299,115 @@
             </button>
         </form>
     </div>
+    <div class="version">v1.0</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Generar partículas flotantes
-    const container = document.getElementById('particles');
-    for (let i = 0; i < 18; i++) {
-        const p = document.createElement('div');
-        p.classList.add('particle');
-        const size = Math.random() * 6 + 2;
-        p.style.cssText = `
-            width: ${size}px;
-            height: ${size}px;
-            left: ${Math.random() * 100}%;
-            animation-duration: ${Math.random() * 15 + 10}s;
-            animation-delay: ${Math.random() * 10}s;
-        `;
-        container.appendChild(p);
-    }
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], time = 0;
+
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i = 0; i < 120; i++) {
+    particles.push({
+        x: Math.random() * 2000,
+        y: Math.random() * 1000,
+        size: Math.random() * 2.5 + 0.5,
+        speed: Math.random() * 0.4 + 0.1,
+        opacity: Math.random() * 0.6 + 0.1,
+        waveOffset: Math.random() * Math.PI * 2,
+    });
+}
+
+function getWaveY(x, t, amplitude, frequency, phase) {
+    return amplitude * Math.sin(frequency * x + t + phase);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H));
+    bg.addColorStop(0, '#0a2010');
+    bg.addColorStop(0.5, '#061508');
+    bg.addColorStop(1, '#020a02');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const waves = [
+        { amplitude: H*0.12, frequency: 0.003,  phase: 0,   speed: 0.4,  alpha: 0.06, color: '34,197,94' },
+        { amplitude: H*0.10, frequency: 0.004,  phase: 1.5, speed: 0.3,  alpha: 0.08, color: '74,222,128' },
+        { amplitude: H*0.14, frequency: 0.0025, phase: 3.0, speed: 0.5,  alpha: 0.05, color: '22,163,74' },
+        { amplitude: H*0.08, frequency: 0.005,  phase: 0.8, speed: 0.6,  alpha: 0.10, color: '134,239,172' },
+        { amplitude: H*0.16, frequency: 0.002,  phase: 4.5, speed: 0.25, alpha: 0.04, color: '16,185,129' },
+    ];
+
+    waves.forEach((w, wi) => {
+        const baseY = H * (0.25 + wi * 0.12);
+        const t = time * w.speed;
+
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let x = 0; x <= W; x += 3) {
+            const y = baseY + getWaveY(x, t, w.amplitude, w.frequency, w.phase);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+
+        const grad = ctx.createLinearGradient(0, baseY - w.amplitude, 0, baseY + w.amplitude);
+        grad.addColorStop(0, `rgba(${w.color}, ${w.alpha * 1.5})`);
+        grad.addColorStop(0.5, `rgba(${w.color}, ${w.alpha})`);
+        grad.addColorStop(1, `rgba(${w.color}, 0)`);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 3) {
+            const y = baseY + getWaveY(x, t, w.amplitude, w.frequency, w.phase);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(${w.color}, ${w.alpha * 3})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    });
+
+    particles.forEach(p => {
+        const waveIdx = Math.min(Math.floor(p.y / (H / waves.length)), waves.length - 1);
+        const w = waves[waveIdx];
+        const baseY = H * (0.25 + waveIdx * 0.12);
+        const waveY = baseY + getWaveY(p.x, time * w.speed, w.amplitude * 0.8, w.frequency, w.phase);
+        const screenX = (p.x / 2000) * W;
+        const screenY = waveY + Math.sin(time * 0.5 + p.waveOffset) * 15;
+
+        const glow = ctx.createRadialGradient(screenX, screenY, 0, screenX, screenY, p.size * 4);
+        glow.addColorStop(0, `rgba(74,222,128,${p.opacity})`);
+        glow.addColorStop(1, 'rgba(74,222,128,0)');
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, p.size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(134,239,172,${p.opacity * 1.5})`;
+        ctx.fill();
+
+        p.x += p.speed * 0.8;
+        if (p.x > 2000) p.x = 0;
+    });
+
+    time += 0.008;
+    requestAnimationFrame(draw);
+}
+
+draw();
 </script>
 </body>
 </html>

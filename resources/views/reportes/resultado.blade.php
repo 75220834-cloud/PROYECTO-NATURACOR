@@ -1,167 +1,177 @@
 @extends('layouts.app')
 @section('title', 'Resultados del Reporte')
+@section('page-title', 'Resultados del Reporte')
 @section('content')
 <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ route('reportes.index') }}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <a href="{{ route('reportes.index') }}" class="btn btn-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
     <div>
-        <h4 class="fw-bold mb-0" style="color:#1a2e1a">📊 Resultados del Reporte</h4>
+        <h4 class="fw-bold mb-0">📊 Resultados del Reporte</h4>
         <small class="text-muted">{{ $ventas->count() }} ventas encontradas</small>
     </div>
     <form action="{{ route('reportes.generar') }}" method="POST" class="ms-auto">
         @csrf
         <input type="hidden" name="exportar" value="pdf">
-        <button type="submit" class="btn btn-outline-danger btn-sm px-3">
+        <button type="submit" class="btn btn-danger btn-sm px-3">
             <i class="bi bi-file-pdf me-1"></i> Exportar PDF
         </button>
     </form>
 </div>
 
-<!-- KPIs -->
+{{-- KPIs Ventas --}}
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center">
-            <div class="fw-bold" style="font-size:28px;color:#22c55e;">{{ $totales['ventas'] }}</div>
-            <small class="text-muted">Ventas</small>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card text-center">
+            <div class="kpi-icon kpi-icon-green mx-auto mb-2"><i class="bi bi-receipt"></i></div>
+            <div class="kpi-value">{{ $totales['ventas'] }}</div>
+            <div class="kpi-label">Ventas</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center">
-            <div class="fw-bold" style="font-size:28px;color:#22c55e;">S/ {{ number_format($totales['total'],2) }}</div>
-            <small class="text-muted">Total facturado</small>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card text-center">
+            <div class="kpi-icon kpi-icon-green mx-auto mb-2"><i class="bi bi-cash-coin"></i></div>
+            <div class="kpi-value">S/ {{ number_format($totales['total'],2) }}</div>
+            <div class="kpi-label">Total facturado</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center">
-            <div class="fw-bold" style="font-size:28px;color:#22c55e;">S/ {{ number_format($totales['efectivo'],2) }}</div>
-            <small class="text-muted">Efectivo</small>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card text-center">
+            <div class="kpi-icon kpi-icon-amber mx-auto mb-2"><i class="bi bi-wallet2"></i></div>
+            <div class="kpi-value">S/ {{ number_format($totales['efectivo'],2) }}</div>
+            <div class="kpi-label">Efectivo</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center">
-            <div class="fw-bold" style="font-size:28px;color:#22c55e;">S/ {{ number_format($totales['yape'] + $totales['plin'],2) }}</div>
-            <small class="text-muted">Yape + Plin</small>
+    <div class="col-6 col-md-3">
+        <div class="kpi-card text-center">
+            <div class="kpi-icon kpi-icon-blue mx-auto mb-2"><i class="bi bi-phone"></i></div>
+            <div class="kpi-value">S/ {{ number_format($totales['yape'] + $totales['plin'],2) }}</div>
+            <div class="kpi-label">Yape + Plin</div>
         </div>
     </div>
 </div>
 
-{{-- Egresos KPIs --}}
+{{-- KPIs Egresos --}}
 @if($egresos->count() > 0)
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center" style="border-left:4px solid #ef4444 !important;">
-            <div class="fw-bold" style="font-size:28px;color:#ef4444;">{{ $egresos->count() }}</div>
-            <small class="text-muted">Egresos registrados</small>
+        <div class="kpi-card text-center" style="border-left: 3px solid rgba(231,76,60,0.6);">
+            <div class="kpi-icon kpi-icon-rose mx-auto mb-2"><i class="bi bi-arrow-down-circle"></i></div>
+            <div class="kpi-value" style="color:#e74c3c;">{{ $egresos->count() }}</div>
+            <div class="kpi-label">Egresos registrados</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center" style="border-left:4px solid #ef4444 !important;">
-            <div class="fw-bold" style="font-size:28px;color:#ef4444;">- S/ {{ number_format($totales['egresos'],2) }}</div>
-            <small class="text-muted">Total egresos</small>
+        <div class="kpi-card text-center" style="border-left: 3px solid rgba(231,76,60,0.6);">
+            <div class="kpi-icon kpi-icon-rose mx-auto mb-2"><i class="bi bi-dash-circle"></i></div>
+            <div class="kpi-value" style="color:#e74c3c;">- S/ {{ number_format($totales['egresos'],2) }}</div>
+            <div class="kpi-label">Total egresos</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 p-3 text-center" style="border-left:4px solid #16a34a !important;">
-            <div class="fw-bold" style="font-size:28px;color:#16a34a;">S/ {{ number_format($totales['neto'],2) }}</div>
-            <small class="text-muted">Neto (ventas − egresos)</small>
+        <div class="kpi-card text-center" style="border-left: 3px solid rgba(40,199,111,0.6);">
+            <div class="kpi-icon kpi-icon-green mx-auto mb-2"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="kpi-value" style="color:var(--neon);">S/ {{ number_format($totales['neto'],2) }}</div>
+            <div class="kpi-label">Neto (ventas − egresos)</div>
         </div>
     </div>
 </div>
 
 {{-- Tabla de egresos --}}
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-header bg-white border-0 pt-3 px-4">
-        <h6 class="fw-bold mb-0" style="color:#dc2626;"><i class="bi bi-arrow-down-circle me-2"></i>Detalle de Egresos</h6>
+<div class="nc-card mb-4">
+    <div class="nc-card-header">
+        <span style="color:#e74c3c;"><i class="bi bi-arrow-down-circle me-2"></i>Detalle de Egresos</span>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr style="background:#fef2f2;font-size:12px;text-transform:uppercase;color:#6b7280;">
-                        <th class="px-4 py-3">Fecha</th>
-                        <th>Descripción</th>
-                        <th>Empleado</th>
-                        <th class="text-end px-4">Monto</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($egresos as $egreso)
-                    <tr>
-                        <td class="px-4" style="font-size:12px;">{{ $egreso->created_at->format('d/m/Y H:i') }}</td>
-                        <td style="font-size:13px;">{{ $egreso->descripcion }}</td>
-                        <td style="font-size:13px;">{{ $egreso->empleado?->name ?? '—' }}</td>
-                        <td class="text-end px-4 fw-bold" style="color:#dc2626;">- S/ {{ number_format($egreso->monto,2) }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr style="background:#fef2f2;font-weight:700;">
-                        <td colspan="3" class="px-4 py-3 text-end">TOTAL EGRESOS:</td>
-                        <td class="text-end px-4" style="color:#dc2626;font-size:16px;">- S/ {{ number_format($totales['egresos'],2) }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+    <div class="table-responsive">
+        <table class="table nc-table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th class="px-4">Fecha</th>
+                    <th>Descripción</th>
+                    <th>Empleado</th>
+                    <th class="text-end px-4">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($egresos as $egreso)
+                <tr>
+                    <td class="px-4" style="font-size:12px;">{{ $egreso->created_at->format('d/m/Y H:i') }}</td>
+                    <td style="font-size:13px;">{{ $egreso->descripcion }}</td>
+                    <td style="font-size:13px;">{{ $egreso->empleado?->name ?? '—' }}</td>
+                    <td class="text-end px-4 fw-bold" style="color:#e74c3c;">- S/ {{ number_format($egreso->monto,2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr style="background: rgba(231,76,60,0.10); border-top: 1px solid rgba(231,76,60,0.25);">
+                    <td colspan="3" class="px-4 py-3 text-end fw-bold" style="color:var(--text-sec); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Total Egresos:</td>
+                    <td class="text-end px-4 fw-bold" style="color:#e74c3c; font-size:17px;">- S/ {{ number_format($totales['egresos'],2) }}</td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 </div>
 @endif
 
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead>
-                    <tr style="background:#f0fdf4;font-size:12px;text-transform:uppercase;color:#6b7280;">
-                        <th class="px-4 py-3">Boleta</th>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Empleado</th>
-                        <th>Pago</th>
-                        <th class="text-end px-4">Total</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($ventas as $venta)
-                    <tr>
-                        <td class="px-4"><code style="font-size:12px;">{{ $venta->numero_boleta ?? 'N/A' }}</code></td>
-                        <td style="font-size:12px;">{{ $venta->created_at->format('d/m/Y H:i') }}</td>
-                        <td style="font-size:13px;">{{ $venta->cliente?->nombre ?? 'Cliente general' }}</td>
-                        <td style="font-size:13px;">{{ $venta->empleado?->name ?? '—' }}</td>
-                        <td>
-                            <span class="badge" style="background:#f0fdf4;color:#15803d;font-size:11px;">{{ $venta->metodo_pago }}</span>
-                        </td>
-                        <td class="text-end px-4 fw-bold" style="color:#16a34a;">S/ {{ number_format($venta->total,2) }}</td>
-                        <td>
-                            <a href="{{ route('boletas.show', $venta) }}" class="btn btn-light btn-sm">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="7" class="text-center py-5 text-muted">No hay ventas para estos filtros</td></tr>
-                    @endforelse
-                </tbody>
-                <tfoot>
-                    <tr style="background:#f0fdf4;font-weight:700;">
-                        <td colspan="5" class="px-4 py-3 text-end">TOTAL VENTAS:</td>
-                        <td class="text-end px-4" style="color:#16a34a;font-size:16px;">S/ {{ number_format($totales['total'],2) }}</td>
-                        <td></td>
-                    </tr>
-                    @if($egresos->count() > 0)
-                    <tr style="background:#fef2f2;font-weight:700;">
-                        <td colspan="5" class="px-4 py-2 text-end" style="color:#dc2626;">EGRESOS:</td>
-                        <td class="text-end px-4" style="color:#dc2626;font-size:14px;">- S/ {{ number_format($totales['egresos'],2) }}</td>
-                        <td></td>
-                    </tr>
-                    <tr style="background:#f0fdf4;font-weight:700;border-top:3px solid #16a34a;">
-                        <td colspan="5" class="px-4 py-3 text-end" style="font-size:14px;">NETO FINAL:</td>
-                        <td class="text-end px-4" style="color:#16a34a;font-size:18px;font-weight:800;">S/ {{ number_format($totales['neto'],2) }}</td>
-                        <td></td>
-                    </tr>
-                    @endif
-                </tfoot>
-            </table>
-        </div>
+{{-- Tabla de ventas --}}
+<div class="nc-card">
+    <div class="table-responsive">
+        <table class="table nc-table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th class="px-4">Boleta</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Empleado</th>
+                    <th>Pago</th>
+                    <th class="text-end px-4">Total</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($ventas as $venta)
+                <tr>
+                    <td class="px-4">
+                        <code style="font-size:12px; color:var(--neon);">{{ $venta->numero_boleta ?? 'N/A' }}</code>
+                    </td>
+                    <td style="font-size:12px;">{{ $venta->created_at->format('d/m/Y H:i') }}</td>
+                    <td style="font-size:13px;">{{ $venta->cliente?->nombre ?? 'Cliente general' }}</td>
+                    <td style="font-size:13px;">{{ $venta->empleado?->name ?? '—' }}</td>
+                    <td><span class="badge-natural">{{ $venta->metodo_pago }}</span></td>
+                    <td class="text-end px-4 fw-bold" style="color:var(--neon);">S/ {{ number_format($venta->total,2) }}</td>
+                    <td>
+                        <a href="{{ route('boletas.show', $venta) }}" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">No hay ventas para estos filtros</td>
+                </tr>
+                @endforelse
+            </tbody>
+            <tfoot>
+                {{-- Total ventas --}}
+                <tr style="background: rgba(40,199,111,0.10); border-top: 1px solid rgba(40,199,111,0.20);">
+                    <td colspan="5" class="px-4 py-3 text-end fw-bold" style="color:var(--text-sec); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Total Ventas:</td>
+                    <td class="text-end px-4 fw-bold" style="color:var(--neon); font-size:17px;">S/ {{ number_format($totales['total'],2) }}</td>
+                    <td></td>
+                </tr>
+                @if($egresos->count() > 0)
+                {{-- Egresos --}}
+                <tr style="background: rgba(231,76,60,0.08); border-top: 1px solid rgba(231,76,60,0.15);">
+                    <td colspan="5" class="px-4 py-2 text-end fw-bold" style="color:var(--text-sec); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Egresos:</td>
+                    <td class="text-end px-4 fw-bold" style="color:#e74c3c; font-size:15px;">- S/ {{ number_format($totales['egresos'],2) }}</td>
+                    <td></td>
+                </tr>
+                {{-- Neto final --}}
+                <tr style="background: rgba(40,199,111,0.15); border-top: 2px solid rgba(40,199,111,0.40);">
+                    <td colspan="5" class="px-4 py-3 text-end fw-bold" style="color:rgba(255,255,255,0.88); font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">Neto Final:</td>
+                    <td class="text-end px-4 fw-bold" style="color:var(--neon); font-size:20px;">S/ {{ number_format($totales['neto'],2) }}</td>
+                    <td></td>
+                </tr>
+                @endif
+            </tfoot>
+        </table>
     </div>
 </div>
 @endsection

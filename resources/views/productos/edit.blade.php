@@ -13,7 +13,7 @@
 <div class="col-lg-8">
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
-        <form action="{{ route('productos.update', $producto) }}" method="POST">
+        <form action="{{ route('productos.update', $producto) }}" method="POST" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="row g-3">
                 <div class="col-md-8">
@@ -57,6 +57,18 @@
                     </select>
                 </div>
                 @endif
+                <div class="col-12">
+                    <label class="form-label fw-semibold" style="font-size:13px;">📷 Imagen del producto</label>
+                    @if($producto->imagen)
+                    <div class="mb-2">
+                        <img src="{{ asset('storage/' . $producto->imagen) }}" alt="{{ $producto->nombre }}" style="height:80px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);">
+                        <small class="text-muted d-block" style="font-size:11px;">Imagen actual. Sube otra para reemplazarla.</small>
+                    </div>
+                    @endif
+                    <input type="file" name="imagen" class="form-control rounded-3 @error('imagen') is-invalid @enderror" accept="image/*">
+                    <small class="text-muted" style="font-size:11px;">JPG, PNG o WebP. Máximo 2MB.</small>
+                    @error('imagen')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
                 <div class="col-12 d-flex gap-4">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="frecuente" id="frecuente" value="1" {{ $producto->frecuente?'checked':'' }}>

@@ -3,7 +3,7 @@
 return [
     'igv_porcentaje' => env('IGV_PORCENTAJE', 18),
     'fidelizacion_monto'           => env('FIDELIZACION_MONTO', 500),
-    'fidelizacion_maximo_premio'   => env('FIDELIZACION_MAXIMO_PREMIO', 30),
+    'fidelizacion_maximo_premio'   => env('FIDELIZACION_MAXIMO_PREMIO', 40),
     'fidelizacion_cordiales_monto' => env('FIDELIZACION_CORDIALES_MONTO', 500),
     'fidelizacion_inicio'          => env('FIDELIZACION_INICIO', '2026-01-01'),
     'fidelizacion_fin'             => env('FIDELIZACION_FIN', '2026-12-31'),
@@ -19,8 +19,9 @@ return [
     'empresa' => [
         'nombre' => 'NATURACOR',
         'ruc' => '20000000000',
-        'direccion' => 'Lima, Perú',
-        'telefono' => '',
+        'direccion' => 'Jauja, Junín - Perú',
+        'telefono' => '932857118',
+        'whatsapp' => '932857118',
         'email' => 'info@naturacor.pe',
     ],
 ];

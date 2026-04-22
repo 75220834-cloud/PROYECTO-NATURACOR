@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
@@ -39,12 +40,17 @@ class ProductoController extends Controller
             'tipo' => 'required|in:natural,cordial',
             'frecuente' => 'boolean',
             'sucursal_id' => 'nullable|exists:sucursales,id',
+            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
         $data['activo'] = true;
         $data['frecuente'] = $request->boolean('frecuente');
 
         if (!auth()->user()->isAdmin()) {
             $data['sucursal_id'] = auth()->user()->sucursal_id;
+        }
+
+        if ($request->hasFile('imagen')) {
+            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
         }
 
         Producto::create($data);
@@ -73,9 +79,18 @@ class ProductoController extends Controller
             'tipo' => 'required|in:natural,cordial',
             'frecuente' => 'boolean',
             'activo' => 'boolean',
+            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
         $data['frecuente'] = $request->boolean('frecuente');
         $data['activo'] = $request->boolean('activo');
+
+        if ($request->hasFile('imagen')) {
+            // Eliminar imagen anterior si existe
+            if ($producto->imagen) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
+            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+        }
 
         $producto->update($data);
         return redirect()->route('productos.index')->with('success', 'Producto actualizado.');

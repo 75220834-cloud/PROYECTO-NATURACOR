@@ -13,7 +13,7 @@
 <div class="col-lg-8">
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-body p-4">
-        <form action="{{ route('productos.store') }}" method="POST">
+        <form action="{{ route('productos.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">
                 <div class="col-md-8">
@@ -61,6 +61,12 @@
                     </select>
                 </div>
                 @endif
+                <div class="col-12">
+                    <label class="form-label fw-semibold" style="font-size:13px;">📷 Imagen del producto</label>
+                    <input type="file" name="imagen" class="form-control rounded-3 @error('imagen') is-invalid @enderror" accept="image/*">
+                    <small class="text-muted" style="font-size:11px;">JPG, PNG o WebP. Máximo 2MB. Se mostrará en el catálogo público.</small>
+                    @error('imagen')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
                 <div class="col-12">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="frecuente" id="frecuente" value="1" {{ old('frecuente')?'checked':'' }}>

@@ -188,7 +188,7 @@ class VentaController extends Controller
 
     /**
      * Fidelización 2026:
-     * - Regla 1 (Naturales): acumulado_naturales >= S/500 → Botella 2L Nopal gratis
+     * - Regla 1 (Naturales): acumulado_naturales >= S/500 → 1 Botella de Litro Especial gratis
      * Solo aplica dentro del período 2026-01-01 al 2026-12-31.
      */
     private function procesarFidelizacion(Venta $venta, ?Cliente $cliente, array $lineas, Request $request): array
@@ -202,13 +202,27 @@ class VentaController extends Controller
 
         $canjes = [];
 
-        // ─── Regla 1: Productos Naturales ────────────────────────────────
-        $montoNaturales = collect($lineas)
-            ->filter(fn($l) => $l['producto']->tipo === 'natural')
+        // ─── Regla 1: Productos Naturales + Cordiales ─────────────────────
+        // 1. Sumar los que pasaron como productos regulares (naturales o cordiales)
+        $montoProductos = collect($lineas)
+            ->filter(fn($l) => in_array($l['producto']->tipo, ['natural', 'cordial']))
             ->sum('subtotal');
 
-        if ($montoNaturales > 0) {
-            $cliente->increment('acumulado_naturales', $montoNaturales);
+        // 2. Sumar cordiales rápidos (excluyendo invitados/gratis)
+        $montoCordiales = 0;
+        if ($request->has('cordial')) {
+            foreach ($request->cordial as $c) {
+                if ($c['tipo'] !== 'invitado') {
+                    $precio = CordialVenta::$precios[$c['tipo']] ?? 0;
+                    $montoCordiales += $precio * ($c['cantidad'] ?? 1);
+                }
+            }
+        }
+
+        $montoTotal = $montoProductos + $montoCordiales;
+
+        if ($montoTotal > 0) {
+            $cliente->increment('acumulado_naturales', $montoTotal);
             $cliente->refresh();
 
             $umbral = config('naturacor.fidelizacion_monto', 500);
@@ -219,7 +233,7 @@ class VentaController extends Controller
                     'tipo_regla'        => FidelizacionCanje::REGLA_NATURALES,
                     'valor_premio'      => 0,
                     'descripcion'       => "Premio por S/{$cliente->acumulado_naturales} acumulado en naturales",
-                    'descripcion_premio'=> 'Botella 2L de Bebida Nopal gratis',
+                    'descripcion_premio'=> '1 Botella de Litro Especial gratis (S/40)',
                     'entregado'         => false,
                 ]);
                 $cliente->acumulado_naturales = 0;

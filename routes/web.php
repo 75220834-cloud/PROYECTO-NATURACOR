@@ -15,9 +15,13 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\ReclamoController;
 use App\Http\Controllers\CordialController;
 use App\Http\Controllers\FidelizacionController;
+use App\Http\Controllers\CatalogoController;
 
-// Redirigir raíz al login
-Route::get('/', fn() => redirect('/login'));
+// Redirigir raíz al catálogo público
+Route::get('/', fn() => redirect('/catalogo'));
+
+// Catálogo público (sin autenticación)
+Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo');
 
 // Rutas autenticadas
 Route::middleware(['auth'])->group(function () {

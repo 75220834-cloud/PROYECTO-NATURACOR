@@ -82,14 +82,14 @@ class FidelizacionController extends Controller
             'acumulado_naturales' => 0,
         ]);
 
-        // Descontar 1 unidad del producto Nopal 2L del inventario
-        $productoNopal = \App\Models\Producto::where('activo', true)
-            ->where('nombre', 'like', '%nopal%')
-            ->where('nombre', 'like', '%2%')
+        // Descontar 1 unidad del producto Litro Especial del inventario
+        $productoEspecial = \App\Models\Producto::where('activo', true)
+            ->where('nombre', 'like', '%litro especial%')
+            ->where('tipo', 'cordial')
             ->first();
 
-        if ($productoNopal && $productoNopal->stock > 0) {
-            $productoNopal->decrement('stock', 1);
+        if ($productoEspecial && $productoEspecial->stock > 0) {
+            $productoEspecial->decrement('stock', 1);
         }
 
         return back()->with('success', "Premio '{$canje->descripcion_premio}' entregado a {$canje->cliente->nombreCompleto()}. Su acumulado se reinició a S/0 para un nuevo ciclo.");

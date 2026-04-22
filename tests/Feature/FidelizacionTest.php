@@ -114,7 +114,7 @@ class FidelizacionTest extends TestCase
         $this->assertDatabaseHas('fidelizacion_canjes', [
             'cliente_id'         => $cliente->id,
             'tipo_regla'         => 'regla1_500',
-            'descripcion_premio' => 'Botella 2L de Bebida Nopal gratis',
+            'descripcion_premio' => '1 Botella de Litro Especial gratis (S/40)',
         ]);
     }
 

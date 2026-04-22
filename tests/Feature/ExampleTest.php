@@ -13,7 +13,7 @@ class ExampleTest extends TestCase
     public function test_the_application_returns_a_successful_response(): void
     {
         $response = $this->get('/');
-        // Root redirects to /login — this is the expected behavior
-        $response->assertRedirect('/login');
+        // Root redirects to /catalogo — this is the expected behavior now
+        $response->assertRedirect('/catalogo');
     }
 }

@@ -6,158 +6,471 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'NATURACOR') - Sistema de Gestión</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         :root {
-            --nc-green-50: #f0fdf4;
-            --nc-green-100: #dcfce7;
-            --nc-green-200: #bbf7d0;
-            --nc-green-300: #86efac;
-            --nc-green-400: #4ade80;
-            --nc-green-500: #22c55e;
-            --nc-green-600: #16a34a;
-            --nc-green-700: #15803d;
-            --nc-green-800: #166534;
-            --nc-sidebar-bg: #1a2e1a;
-            --nc-sidebar-hover: rgba(74,222,128,0.15);
-            --nc-sidebar-active: rgba(74,222,128,0.25);
-            --nc-body-bg: #f8fdf8;
+            /* ── Paleta exacta ── */
+            --neon:       #28c76f;
+            --neon-dim:   rgba(40, 199, 111, 0.18);
+            --neon-glow:  rgba(40, 199, 111, 0.40);
+            --neon-soft:  rgba(40, 199, 111, 0.08);
+            --emerald:    #0e4b2a;
+            --base-bg:    #071a10;
+            --white:      #ffffff;
+            --text-sec:   #9caea4;
+            --text-muted: rgba(255,255,255,0.28);
+
+            /* ── Glass ── */
+            --glass-bg:     rgba(255,255,255,0.03);
+            --glass-border: rgba(255,255,255,0.10);
+            --glass-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            --glass-blur:   blur(18px);
+
+            /* ── Layout ── */
+            --sidebar-w:         215px;
+            --sidebar-collapsed: 60px;
+            --topbar-h:          54px;
         }
-        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--nc-body-bg);
-            color: #1a1f1a;
+            font-family: 'Sora', sans-serif;
+            background: var(--base-bg);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        /* Sidebar */
+
+        /* ════════════════════════════
+           CANVAS FONDO
+        ════════════════════════════ */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ════════════════════════════
+           FADE-IN-UP AL CARGAR
+        ════════════════════════════ */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .nc-content > * {
+            animation: fadeInUp 0.55s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .nc-content > *:nth-child(1) { animation-delay: 0.05s; }
+        .nc-content > *:nth-child(2) { animation-delay: 0.12s; }
+        .nc-content > *:nth-child(3) { animation-delay: 0.19s; }
+        .nc-content > *:nth-child(4) { animation-delay: 0.26s; }
+        .nc-content > *:nth-child(5) { animation-delay: 0.33s; }
+        .nc-content > *:nth-child(6) { animation-delay: 0.40s; }
+
+        /* ════════════════════════════
+           SIDEBAR — glassmorphism
+        ════════════════════════════ */
         .nc-sidebar {
-            width: 260px; min-height: 100vh;
-            background: var(--nc-sidebar-bg);
-            position: fixed; top: 0; left: 0; z-index: 1000;
-            display: flex; flex-direction: column;
-            transition: width 0.3s ease;
-            box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            background: rgba(7, 26, 16, 0.55);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+            border-right: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 4px 0 40px rgba(0,0,0,0.45),
+                        inset -1px 0 0 rgba(40,199,111,0.08);
         }
-        .nc-sidebar.collapsed { width: 64px; }
+        .nc-sidebar.collapsed { width: var(--sidebar-collapsed); }
+
         .nc-sidebar-brand {
-            padding: 20px 18px; display: flex; align-items: center; gap: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 14px;
+            display: flex; align-items: center; gap: 11px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
         }
         .nc-sidebar-brand .logo {
-            width: 36px; height: 36px; border-radius: 10px;
-            background: linear-gradient(135deg, var(--nc-green-400), var(--nc-green-600));
+            width: 34px; height: 34px;
+            border-radius: 9px;
+            background: rgba(40,199,111,0.15);
+            border: 1px solid rgba(40,199,111,0.35);
             display: flex; align-items: center; justify-content: center;
-            font-size: 20px; flex-shrink: 0;
+            font-size: 17px; flex-shrink: 0;
+            box-shadow: 0 0 16px rgba(40,199,111,0.25),
+                        inset 0 0 8px rgba(40,199,111,0.12);
+            animation: logoGlow 3s ease-in-out infinite;
+        }
+        @keyframes logoGlow {
+            0%,100% { box-shadow: 0 0 16px rgba(40,199,111,0.25), inset 0 0 8px rgba(40,199,111,0.12); }
+            50%      { box-shadow: 0 0 30px rgba(40,199,111,0.48), inset 0 0 14px rgba(40,199,111,0.22); }
         }
         .nc-sidebar-brand .brand-name {
-            font-size: 18px; font-weight: 700; color: white; letter-spacing: 0.5px;
+            font-size: 15px; font-weight: 800;
+            color: var(--white); letter-spacing: 2.5px;
+            white-space: nowrap; overflow: hidden;
+            transition: opacity 0.2s;
+        }
+        .nc-sidebar.collapsed .brand-name,
+        .nc-sidebar.collapsed .nav-label,
+        .nc-sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; }
+
+        .nc-sidebar nav {
+            padding: 8px 0; flex: 1;
+            overflow-y: auto; overflow-x: hidden;
+        }
+        .nc-sidebar nav::-webkit-scrollbar { width: 3px; }
+        .nc-sidebar nav::-webkit-scrollbar-thumb { background: rgba(40,199,111,0.15); border-radius: 2px; }
+
+        .nav-section {
+            font-size: 9.5px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.8px;
+            color: rgba(40,199,111,0.38);
+            padding: 11px 14px 3px;
+            white-space: nowrap; transition: opacity 0.2s;
+        }
+        .nav-item a {
+            display: flex; align-items: center; gap: 11px;
+            padding: 9px 14px;
+            color: var(--text-sec);
+            text-decoration: none;
+            border-radius: 0 10px 10px 0;
+            margin: 1px 8px 1px 0;
+            font-size: 13px; font-weight: 500;
+            transition: all 0.2s ease;
             white-space: nowrap; overflow: hidden;
         }
-        .nc-sidebar nav { padding: 12px 0; flex: 1; overflow-y: auto; }
-        .nc-sidebar .nav-section {
-            font-size: 10px; font-weight: 600; text-transform: uppercase;
-            letter-spacing: 1px; color: rgba(255,255,255,0.3);
-            padding: 12px 18px 4px; white-space: nowrap; overflow: hidden;
+        .nav-item a:hover {
+            background: rgba(40,199,111,0.09);
+            color: var(--white);
         }
-        .nc-sidebar .nav-item a {
-            display: flex; align-items: center; gap: 12px;
-            padding: 10px 18px; color: rgba(255,255,255,0.7);
-            text-decoration: none; border-radius: 0 12px 12px 0;
-            margin: 2px 8px 2px 0; font-size: 14px; font-weight: 500;
-            transition: all 0.2s; white-space: nowrap; overflow: hidden;
+        .nav-item a.active {
+            background: rgba(40,199,111,0.15);
+            color: var(--neon);
+            font-weight: 600;
+            border-right: 2px solid var(--neon);
+            box-shadow: inset 0 0 12px rgba(40,199,111,0.10),
+                        4px 0 12px rgba(40,199,111,0.12);
         }
-        .nc-sidebar .nav-item a:hover { background: var(--nc-sidebar-hover); color: white; }
-        .nc-sidebar .nav-item a.active {
-            background: var(--nc-sidebar-active);
-            color: var(--nc-green-400); font-weight: 600;
-            border-right: 3px solid var(--nc-green-400);
+        .nav-item i { font-size: 16px; flex-shrink: 0; }
+        .nav-label  { transition: opacity 0.2s; }
+
+        .nc-sidebar-footer {
+            padding: 12px 14px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 10px; color: rgba(255,255,255,0.18);
+            white-space: nowrap; overflow: hidden; letter-spacing: 0.5px;
         }
-        .nc-sidebar .nav-item i { font-size: 18px; flex-shrink: 0; }
-        /* Topbar */
+
+        /* ════════════════════════════
+           TOPBAR — glassmorphism
+        ════════════════════════════ */
         .nc-topbar {
-            position: fixed; top: 0; right: 0;
-            left: 260px; height: 60px; background: white;
-            border-bottom: 1px solid #e8f5e8; z-index: 999;
-            display: flex; align-items: center; padding: 0 24px;
-            gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: left 0.3s;
+            position: fixed;
+            top: 0; right: 0;
+            left: var(--sidebar-w);
+            height: var(--topbar-h);
+            background: rgba(7,26,16,0.55);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            z-index: 999;
+            display: flex; align-items: center;
+            padding: 0 18px; gap: 12px;
+            box-shadow: 0 2px 24px rgba(0,0,0,0.40),
+                        inset 0 -1px 0 rgba(40,199,111,0.07);
+            transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
         }
+        .nc-topbar .page-title {
+            font-size: 14.5px; font-weight: 600;
+            color: rgba(255,255,255,0.88);
+        }
+
+        /* ════════════════════════════
+           CONTENT
+        ════════════════════════════ */
         .nc-content {
-            margin-left: 260px; margin-top: 60px;
-            padding: 24px; min-height: calc(100vh - 60px);
-            transition: margin-left 0.3s;
+            margin-left: var(--sidebar-w);
+            margin-top: var(--topbar-h);
+            padding: 20px;
+            min-height: calc(100vh - var(--topbar-h));
+            transition: margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+            position: relative; z-index: 1;
         }
-        /* Cards */
+
+        /* ════════════════════════════
+           GLASS CARDS
+        ════════════════════════════ */
         .nc-card {
-            background: white; border-radius: 16px;
-            border: 1px solid #e8f5e8; padding: 24px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: 14px;
+            border-top:   1px solid rgba(255,255,255,0.10);
+            border-left:  1px solid rgba(255,255,255,0.10);
+            border-bottom:1px solid rgba(255,255,255,0.04);
+            border-right: 1px solid rgba(255,255,255,0.04);
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .nc-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.48),
+                        0 0 0 1px rgba(40,199,111,0.10) inset;
         }
         .nc-card-header {
-            font-size: 16px; font-weight: 600; color: #1a2e1a;
-            margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 14px; font-weight: 600;
+            color: rgba(255,255,255,0.88);
+            margin-bottom: 14px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        /* KPI Cards */
+
+        /* ════════════════════════════
+           KPI CARDS
+        ════════════════════════════ */
         .kpi-card {
-            background: white; border-radius: 16px;
-            padding: 20px; border: 1px solid #e8f5e8;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: 14px; padding: 18px;
+            border-top:   1px solid rgba(255,255,255,0.10);
+            border-left:  1px solid rgba(255,255,255,0.10);
+            border-bottom:1px solid rgba(255,255,255,0.04);
+            border-right: 1px solid rgba(255,255,255,0.04);
+            box-shadow: var(--glass-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-        .kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-        .kpi-icon-green { background: #dcfce7; color: var(--nc-green-600); }
-        .kpi-icon-blue { background: #dbeafe; color: #2563eb; }
-        .kpi-icon-amber { background: #fef3c7; color: #d97706; }
-        .kpi-icon-rose { background: #ffe4e6; color: #e11d48; }
-        .kpi-value { font-size: 28px; font-weight: 700; color: #1a2e1a; }
-        .kpi-label { font-size: 13px; color: #6b7280; font-weight: 500; }
-        /* Buttons */
-        .btn-naturacor { background: var(--nc-green-600); color: white; border: none; border-radius: 10px; font-weight: 500; padding: 8px 18px; }
-        .btn-naturacor:hover { background: var(--nc-green-700); color: white; }
-        .btn-naturacor-outline { border: 2px solid var(--nc-green-600); color: var(--nc-green-600); background: transparent; border-radius: 10px; font-weight: 500; padding: 8px 18px; }
-        .btn-naturacor-outline:hover { background: var(--nc-green-50); color: var(--nc-green-700); }
-        /* Badges */
-        .badge-natural { background: #dcfce7; color: var(--nc-green-700); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-cordial { background: #fdf2f8; color: #9d174d; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-stock-ok { background: #dcfce7; color: var(--nc-green-700); }
-        .badge-stock-low { background: #fef3c7; color: #d97706; }
-        .badge-stock-zero { background: #ffe4e6; color: #e11d48; }
-        /* Tables */
-        .nc-table { border-radius: 12px; overflow: hidden; border: 1px solid #e8f5e8; }
-        .nc-table th { background: var(--nc-green-50); color: var(--nc-green-800); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border: none; padding: 12px 16px; }
-        .nc-table td { border-color: #e8f5e8; padding: 12px 16px; vertical-align: middle; }
-        .nc-table tbody tr:hover { background: var(--nc-green-50); }
-        /* Forms */
-        .nc-input { border-radius: 10px; border: 1.5px solid #d1fae5; padding: 10px 14px; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s; }
-        .nc-input:focus { border-color: var(--nc-green-400); box-shadow: 0 0 0 3px rgba(74,222,128,0.15); outline: none; }
-        /* Alerts */
-        .alert-naturacor { background: #dcfce7; border: 1px solid var(--nc-green-200); color: var(--nc-green-800); border-radius: 12px; }
-        .alert-danger-nc { background: #ffe4e6; border: 1px solid #fecdd3; color: #9f1239; border-radius: 12px; }
-        /* Connection badge */
-        .connection-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; }
-        .connection-badge.online { background: #dcfce7; color: var(--nc-green-700); }
-        .connection-badge.offline { background: #fef3c7; color: #d97706; }
-        .connection-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
-        .connection-dot.online { background: var(--nc-green-500); }
-        .connection-dot.offline { background: #f59e0b; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        /* Responsive */
-        @media(max-width:768px) {
-            .nc-sidebar { width: 0; overflow: hidden; }
-            .nc-topbar, .nc-content { left: 0; margin-left: 0; }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 44px rgba(0,0,0,0.52),
+                        0 0 22px rgba(40,199,111,0.08);
+            border-top-color:  rgba(40,199,111,0.25);
+            border-left-color: rgba(40,199,111,0.25);
         }
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        .kpi-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .kpi-icon-green { background: rgba(40,199,111,0.13); color: var(--neon); }
+        .kpi-icon-blue  { background: rgba(52,152,219,0.13); color: #3498db; }
+        .kpi-icon-amber { background: rgba(243,156,18,0.13); color: #f39c12; }
+        .kpi-icon-rose  { background: rgba(231,76,60,0.13);  color: #e74c3c; }
+        .kpi-value { font-size: 26px; font-weight: 700; color: var(--white); }
+        .kpi-label { font-size: 12.5px; color: var(--text-sec); font-weight: 500; }
+
+        /* ════════════════════════════
+           BADGES de estado (Hoy/Mes/Atención)
+        ════════════════════════════ */
+        .badge-hoy      { background: rgba(52,152,219,0.15); color: #3498db; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
+        .badge-mes      { background: rgba(243,156,18,0.15); color: #f39c12; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
+        .badge-atencion { background: rgba(231,76,60,0.15);  color: #e74c3c; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 600; }
+
+        .badge-natural  { background: rgba(40,199,111,0.14); color: var(--neon); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid rgba(40,199,111,0.2); }
+        .badge-cordial  { background: rgba(244,114,182,0.14); color: #f472b6; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid rgba(244,114,182,0.2); }
+        .badge-stock-ok   { background: rgba(40,199,111,0.14); color: var(--neon); border: 1px solid rgba(40,199,111,0.2); padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-stock-low  { background: rgba(243,156,18,0.14); color: #f39c12;    border: 1px solid rgba(243,156,18,0.2); padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-stock-zero { background: rgba(231,76,60,0.14);  color: #e74c3c;   border: 1px solid rgba(231,76,60,0.2);  padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+        /* ════════════════════════════
+           BOTONES CON GLOW
+        ════════════════════════════ */
+        .btn-naturacor {
+            background: rgba(40,199,111,0.15);
+            color: var(--white);
+            border: 1px solid var(--neon);
+            border-radius: 9px;
+            font-weight: 600; padding: 8px 16px; font-size: 13px;
+            font-family: 'Sora', sans-serif;
+            transition: all 0.22s ease;
+            box-shadow: 0 0 12px rgba(40,199,111,0.25),
+                        inset 0 0 8px rgba(40,199,111,0.10);
+        }
+        .btn-naturacor:hover {
+            color: var(--white);
+            background: rgba(40,199,111,0.28);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 22px rgba(40,199,111,0.55),
+                        0 0 44px rgba(40,199,111,0.22),
+                        inset 0 0 14px rgba(40,199,111,0.20);
+        }
+        .btn-naturacor:active { transform: translateY(0) scale(1); }
+
+        .btn-naturacor-outline {
+            border: 1px solid rgba(40,199,111,0.40);
+            color: var(--neon);
+            background: rgba(40,199,111,0.05);
+            border-radius: 9px; font-weight: 500; padding: 8px 16px;
+            font-size: 13px; font-family: 'Sora', sans-serif;
+            transition: all 0.22s ease;
+        }
+        .btn-naturacor-outline:hover {
+            background: rgba(40,199,111,0.12);
+            color: #86efac;
+            border-color: var(--neon);
+            box-shadow: 0 0 16px rgba(40,199,111,0.32);
+            transform: translateY(-1px);
+        }
+
+        /* ════════════════════════════
+           TABLES
+        ════════════════════════════ */
+        .nc-table { border-radius: 11px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+        .nc-table th {
+            background: rgba(40,199,111,0.06);
+            color: rgba(156,174,164,0.85);
+            font-weight: 600; font-size: 10.5px;
+            text-transform: uppercase; letter-spacing: 1px;
+            border: none; padding: 11px 14px;
+        }
+        .nc-table td {
+            border-color: rgba(255,255,255,0.05);
+            padding: 11px 14px; vertical-align: middle;
+            color: rgba(255,255,255,0.78); font-size: 13.5px;
+        }
+        .nc-table tbody tr { background: transparent; transition: background 0.14s; }
+        .nc-table tbody tr:hover { background: rgba(40,199,111,0.05); }
+
+        /* ════════════════════════════
+           FORMS
+        ════════════════════════════ */
+        .nc-input {
+            border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.10);
+            padding: 10px 13px; font-size: 13.5px;
+            background: rgba(255,255,255,0.04);
+            color: var(--white);
+            transition: all 0.2s;
+            font-family: 'Sora', sans-serif;
+        }
+        .nc-input::placeholder { color: rgba(255,255,255,0.22); }
+        .nc-input:focus {
+            border-color: rgba(40,199,111,0.55);
+            box-shadow: 0 0 0 3px rgba(40,199,111,0.09),
+                        0 0 14px rgba(40,199,111,0.12);
+            outline: none;
+            background: rgba(255,255,255,0.06); color: var(--white);
+        }
+
+        /* Bootstrap overrides */
+        .form-control, .form-select {
+            background: rgba(255,255,255,0.04) !important;
+            border: 1px solid rgba(255,255,255,0.10) !important;
+            color: var(--white) !important;
+            border-radius: 9px !important;
+            font-family: 'Sora', sans-serif !important;
+            font-size: 13.5px !important;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.22) !important; }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255,255,255,0.06) !important;
+            border-color: rgba(40,199,111,0.55) !important;
+            box-shadow: 0 0 0 3px rgba(40,199,111,0.09) !important;
+            color: var(--white) !important;
+        }
+        .form-select option { background: #071a10; color: var(--white); }
+        .form-label {
+            color: rgba(156,174,164,0.8);
+            font-size: 11px; font-weight: 600;
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        /* ════════════════════════════
+           ALERTS
+        ════════════════════════════ */
+        .alert-naturacor {
+            background: rgba(40,199,111,0.08);
+            border: 1px solid rgba(40,199,111,0.25);
+            color: #86efac; border-radius: 11px; font-size: 13.5px;
+            backdrop-filter: blur(10px);
+        }
+        .alert-danger-nc {
+            background: rgba(231,76,60,0.08);
+            border: 1px solid rgba(231,76,60,0.25);
+            color: #fb7185; border-radius: 11px; font-size: 13.5px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* ════════════════════════════
+           CONNECTION BADGE
+        ════════════════════════════ */
+        .connection-badge {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11.5px; font-weight: 500;
+            padding: 5px 12px; border-radius: 20px;
+        }
+        .connection-badge.online  { background: rgba(40,199,111,0.10); color: var(--neon); border: 1px solid rgba(40,199,111,0.20); }
+        .connection-badge.offline { background: rgba(243,156,18,0.10); color: #f39c12;     border: 1px solid rgba(243,156,18,0.20); }
+        .connection-dot { width: 7px; height: 7px; border-radius: 50%; animation: dotPulse 2s infinite; }
+        .connection-dot.online  { background: var(--neon); }
+        .connection-dot.offline { background: #f39c12; }
+        @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ════════════════════════════
+           DROPDOWN
+        ════════════════════════════ */
+        .dropdown-menu {
+            background: rgba(7,26,16,0.96) !important;
+            backdrop-filter: blur(22px) !important;
+            border: 1px solid rgba(255,255,255,0.09) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.6) !important;
+        }
+        .dropdown-item { color: var(--text-sec) !important; font-size: 13px; font-family: 'Sora', sans-serif; }
+        .dropdown-item:hover { background: rgba(40,199,111,0.09) !important; color: var(--white) !important; }
+        .dropdown-divider { border-color: rgba(255,255,255,0.07) !important; }
+        .dropdown-item-text { color: rgba(255,255,255,0.30) !important; }
+
+        /* ════════════════════════════
+           MODAL
+        ════════════════════════════ */
+        .modal-content {
+            background: rgba(7,26,16,0.96) !important;
+            backdrop-filter: blur(24px) !important;
+            border: 1px solid rgba(255,255,255,0.09) !important;
+            border-radius: 16px !important; color: var(--white) !important;
+        }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+        .modal-footer { border-top:  1px solid rgba(255,255,255,0.07) !important; }
+        .modal-title { color: var(--white) !important; font-weight: 600; }
+        .btn-close { filter: invert(1) brightness(0.6) !important; }
+
+        /* ════════════════════════════
+           SCROLLBAR
+        ════════════════════════════ */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--nc-green-200); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(40,199,111,0.18); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(40,199,111,0.35); }
+
+        /* ════════════════════════════
+           RESPONSIVE
+        ════════════════════════════ */
+        @media(max-width: 768px) {
+            .nc-sidebar { width: 0 !important; overflow: hidden; }
+            .nc-topbar  { left: 0 !important; }
+            .nc-content { margin-left: 0 !important; }
+        }
+
+        .text-muted { color: var(--text-sec) !important; }
+        hr { border-color: rgba(255,255,255,0.07) !important; }
     </style>
     @yield('styles')
 </head>
 <body>
-<!-- Sidebar -->
+
+<!-- CANVAS FONDO ANIMADO -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ══ SIDEBAR ══ -->
 <aside class="nc-sidebar" id="sidebar">
     <div class="nc-sidebar-brand">
         <div class="logo">🌿</div>
@@ -167,120 +480,134 @@
         <div class="nav-section">Principal</div>
         <div class="nav-item">
             <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <i class="bi bi-grid-3x3-gap"></i> <span>Dashboard</span>
+                <i class="bi bi-grid-3x3-gap"></i><span class="nav-label">Dashboard</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('ventas.pos') }}" class="{{ request()->routeIs('ventas.pos') ? 'active' : '' }}">
-                <i class="bi bi-cart3"></i> <span>Punto de Venta</span>
+                <i class="bi bi-cart3"></i><span class="nav-label">Punto de Venta</span>
             </a>
         </div>
         <div class="nav-section">Gestión</div>
         <div class="nav-item">
             <a href="{{ route('productos.index') }}" class="{{ request()->routeIs('productos*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i> <span>Productos</span>
+                <i class="bi bi-box-seam"></i><span class="nav-label">Productos</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('clientes.index') }}" class="{{ request()->routeIs('clientes*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> <span>Clientes</span>
+                <i class="bi bi-people"></i><span class="nav-label">Clientes</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('ventas.index') }}" class="{{ request()->routeIs('ventas.index') || request()->routeIs('ventas.show') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> <span>Ventas</span>
+                <i class="bi bi-receipt"></i><span class="nav-label">Ventas</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('caja.index') }}" class="{{ request()->routeIs('caja*') ? 'active' : '' }}">
-                <i class="bi bi-cash-stack"></i> <span>Caja</span>
+                <i class="bi bi-cash-stack"></i><span class="nav-label">Caja</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('fidelizacion.index') }}" class="{{ request()->routeIs('fidelizacion*') ? 'active' : '' }}">
-                <i class="bi bi-star-fill"></i> <span>Fidelización</span>
+                <i class="bi bi-star-fill"></i><span class="nav-label">Fidelización</span>
             </a>
         </div>
         <div class="nav-section">Información</div>
         <div class="nav-item">
             <a href="{{ route('reportes.index') }}" class="{{ request()->routeIs('reportes*') ? 'active' : '' }}">
-                <i class="bi bi-bar-chart-line"></i> <span>Reportes</span>
+                <i class="bi bi-bar-chart-line"></i><span class="nav-label">Reportes</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('recetario.index') }}" class="{{ request()->routeIs('recetario*') ? 'active' : '' }}">
-                <i class="bi bi-journal-medical"></i> <span>Recetario</span>
+                <i class="bi bi-journal-medical"></i><span class="nav-label">Recetario</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('reclamos.index') }}" class="{{ request()->routeIs('reclamos*') ? 'active' : '' }}">
-                <i class="bi bi-exclamation-circle"></i> <span>Reclamos</span>
+                <i class="bi bi-exclamation-circle"></i><span class="nav-label">Reclamos</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('ia.index') }}" class="{{ request()->routeIs('ia*') ? 'active' : '' }}">
-                <i class="bi bi-robot"></i> <span>Asistente IA</span>
+                <i class="bi bi-robot"></i><span class="nav-label">Asistente IA</span>
             </a>
         </div>
         @if(auth()->user()->isAdmin())
         <div class="nav-section">Administración</div>
         <div class="nav-item">
             <a href="{{ route('usuarios.index') }}" class="{{ request()->routeIs('usuarios*') ? 'active' : '' }}">
-                <i class="bi bi-person-gear"></i> <span>Usuarios</span>
+                <i class="bi bi-person-gear"></i><span class="nav-label">Usuarios</span>
             </a>
         </div>
         <div class="nav-item">
             <a href="{{ route('sucursales.index') }}" class="{{ request()->routeIs('sucursales*') ? 'active' : '' }}">
-                <i class="bi bi-shop"></i> <span>Sucursales</span>
+                <i class="bi bi-shop"></i><span class="nav-label">Sucursales</span>
             </a>
         </div>
         @endif
     </nav>
-    <div style="padding: 16px 18px; border-top: 1px solid rgba(255,255,255,0.08);">
-        <div style="font-size: 12px; color: rgba(255,255,255,0.5);">v1.0 — NATURACOR © 2026</div>
-    </div>
+    <div class="nc-sidebar-footer">v1.0 — NATURACOR © 2026</div>
 </aside>
 
-<!-- Topbar -->
-<header class="nc-topbar">
-    <button class="btn btn-sm" onclick="toggleSidebar()" style="border: none; background: transparent; font-size: 20px; color: #4b5563;">
+<!-- ══ TOPBAR ══ -->
+<header class="nc-topbar" id="topbar">
+    <button onclick="toggleSidebar()"
+        style="border:none; background:transparent; font-size:20px;
+               color:rgba(255,255,255,0.45); padding:0; line-height:1;
+               cursor:pointer; transition:color 0.18s; flex-shrink:0;"
+        onmouseover="this.style.color='#28c76f'"
+        onmouseout="this.style.color='rgba(255,255,255,0.45)'">
         <i class="bi bi-list"></i>
     </button>
     <div class="flex-grow-1">
-        <h6 class="mb-0 fw-600" style="color: #1a2e1a;">@yield('page-title', 'Dashboard')</h6>
+        <span class="page-title">@yield('page-title', 'Dashboard')</span>
     </div>
-    <!-- Conexión -->
     <div class="connection-badge online" id="connectionBadge">
         <span class="connection-dot online" id="connectionDot"></span>
         <span id="connectionText">En línea</span>
     </div>
-    <!-- Sucursal -->
     @if(auth()->user()->sucursal)
-    <span style="font-size: 12px; color: #6b7280; background: var(--nc-green-50); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--nc-green-100);">
+    <span style="font-size:11.5px; color:rgba(156,174,164,0.7);
+                 background:rgba(255,255,255,0.03); padding:5px 12px;
+                 border-radius:20px; border:1px solid rgba(255,255,255,0.08);">
         <i class="bi bi-shop"></i> {{ auth()->user()->sucursal->nombre }}
     </span>
     @endif
-    <!-- Usuario -->
     <div class="dropdown">
-        <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown"
-            style="background: var(--nc-green-50); border: 1px solid var(--nc-green-100); border-radius: 30px; padding: 6px 14px;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--nc-green-400); display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700;">
+        <button class="btn btn-sm dropdown-toggle d-flex align-items-center gap-2"
+            data-bs-toggle="dropdown"
+            style="background:rgba(255,255,255,0.04);
+                   border:1px solid rgba(255,255,255,0.10);
+                   border-radius:30px; padding:5px 13px; color:var(--white);
+                   font-family:'Sora',sans-serif; transition:all 0.2s ease;"
+            onmouseover="this.style.borderColor='rgba(40,199,111,0.40)'; this.style.boxShadow='0 0 14px rgba(40,199,111,0.2)'"
+            onmouseout="this.style.borderColor='rgba(255,255,255,0.10)'; this.style.boxShadow='none'">
+            <div style="width:27px; height:27px; border-radius:50%;
+                        background:linear-gradient(135deg,#28c76f,#0e4b2a);
+                        display:flex; align-items:center; justify-content:center;
+                        color:white; font-size:12px; font-weight:700;
+                        box-shadow:0 0 10px rgba(40,199,111,0.35);">
                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
             </div>
-            <span style="font-size: 13px; font-weight: 500; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <span style="font-size:12.5px; font-weight:500;
+                         max-width:110px; overflow:hidden;
+                         text-overflow:ellipsis; white-space:nowrap;">
                 {{ auth()->user()->name }}
             </span>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" style="border-radius: 12px; border: 1px solid #e8f5e8; box-shadow: 0 8px 24px rgba(0,0,0,0.1);">
-            <li><span class="dropdown-item-text text-muted" style="font-size: 12px; padding: 8px 16px;">
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text" style="font-size:11.5px; padding:8px 16px;">
                 {{ auth()->user()->hasRole('admin') ? '👑 Administrador' : '👤 Empleado' }}
             </span></li>
             <li><hr class="dropdown-divider"></li>
             <li>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="dropdown-item" style="color: #e11d48;">
-                        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+                    <button type="submit" class="dropdown-item" style="color:#e74c3c !important;">
+                        <i class="bi bi-box-arrow-right me-1"></i> Cerrar sesión
                     </button>
                 </form>
             </li>
@@ -288,18 +615,20 @@
     </div>
 </header>
 
-<!-- Main Content -->
-<main class="nc-content">
+<!-- ══ CONTENT ══ -->
+<main class="nc-content" id="mainContent">
     @if(session('success'))
-        <div class="alert alert-naturacor alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-check-circle me-2"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter: invert(1) brightness(0.5);"></button>
+        <div class="alert alert-naturacor alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"
+                style="filter:invert(1) brightness(0.5);"></button>
         </div>
     @endif
     @if(session('error'))
-        <div class="alert alert-danger-nc alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i> {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-danger-nc alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"
+                style="filter:invert(1) brightness(0.5);"></button>
         </div>
     @endif
     @yield('content')
@@ -308,47 +637,138 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-// Toggle sidebar
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('collapsed');
-    document.querySelector('.nc-topbar').style.left = document.getElementById('sidebar').classList.contains('collapsed') ? '64px' : '260px';
-    document.querySelector('.nc-content').style.marginLeft = document.getElementById('sidebar').classList.contains('collapsed') ? '64px' : '260px';
-}
+/* ════════════════════════════════════════
+   CANVAS BACKGROUND
+   Colores clave: #28c76f (neón) / #0e4b2a (esmeralda)
+════════════════════════════════════════ */
+(function () {
+    const cv  = document.getElementById('bg-canvas');
+    const ctx = cv.getContext('2d');
+    let W, H, T = 0;
 
-// Online/Offline detection
-function updateConnectionStatus() {
-    const badge = document.getElementById('connectionBadge');
-    const dot = document.getElementById('connectionDot');
-    const text = document.getElementById('connectionText');
-    if (navigator.onLine) {
-        badge.className = 'connection-badge online';
-        dot.className = 'connection-dot online';
-        text.textContent = 'En línea';
-    } else {
-        badge.className = 'connection-badge offline';
-        dot.className = 'connection-dot offline';
-        text.textContent = 'Sin conexión';
+    const PARTS = Array.from({ length: 100 }, () => ({
+        x:  Math.random(), y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.00022,
+        vy: -(Math.random() * 0.00030 + 0.00007),
+        r:  Math.random() * 1.6 + 0.35,
+        op: Math.random() * 0.40 + 0.08,
+        ph: Math.random() * Math.PI * 2,
+    }));
+
+    const WAVES = [
+        { y:.15, fr:.0028, sp:.28, ph:0.0, al:.040, c:'40,199,111'  },
+        { y:.30, fr:.0038, sp:.22, ph:1.7, al:.048, c:'74,222,128'  },
+        { y:.46, fr:.0022, sp:.35, ph:3.2, al:.030, c:'14,75,42'    },
+        { y:.62, fr:.0048, sp:.40, ph:1.0, al:.055, c:'134,239,172' },
+        { y:.77, fr:.0018, sp:.18, ph:4.5, al:.025, c:'22,163,74'   },
+    ];
+
+    function resize() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function frame() {
+        ctx.clearRect(0, 0, W, H);
+
+        /* Fondo #071a10 */
+        const bg = ctx.createLinearGradient(0,0,0,H);
+        bg.addColorStop(0,   '#071a10');
+        bg.addColorStop(0.5, '#061410');
+        bg.addColorStop(1,   '#071a10');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+        /* Resplandor central suave */
+        const gc = ctx.createRadialGradient(W/2,H/2,0, W/2,H/2, Math.max(W,H)*0.6);
+        gc.addColorStop(0, 'rgba(40,199,111,0.04)');
+        gc.addColorStop(1, 'rgba(40,199,111,0)');
+        ctx.fillStyle = gc; ctx.fillRect(0, 0, W, H);
+
+        /* Ondas */
+        WAVES.forEach(w => {
+            const by = H * w.y, t = T * w.sp, amp = H * 0.060;
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += 3) {
+                const y = by + Math.sin(w.fr*x + t + w.ph) * amp;
+                x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+            }
+            ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+            const gw = ctx.createLinearGradient(0, by-amp, 0, by+amp*2);
+            gw.addColorStop(0,   `rgba(${w.c},${w.al*1.8})`);
+            gw.addColorStop(0.5, `rgba(${w.c},${w.al})`);
+            gw.addColorStop(1,   `rgba(${w.c},0)`);
+            ctx.fillStyle = gw; ctx.fill();
+
+            ctx.beginPath();
+            for (let x = 0; x <= W; x += 3) {
+                const y = by + Math.sin(w.fr*x + t + w.ph) * amp;
+                x === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+            }
+            ctx.strokeStyle = `rgba(${w.c},${w.al*3.2})`;
+            ctx.lineWidth = 1.1; ctx.stroke();
+        });
+
+        /* Partículas con glow */
+        PARTS.forEach(p => {
+            const sx = p.x * W;
+            const sy = p.y * H + Math.sin(T*0.45 + p.ph) * 13;
+            const op = p.op * (0.68 + 0.32*Math.sin(T*0.7 + p.ph));
+            const gl = ctx.createRadialGradient(sx,sy,0, sx,sy, p.r*6);
+            gl.addColorStop(0, `rgba(40,199,111,${op*0.9})`);
+            gl.addColorStop(1, 'rgba(40,199,111,0)');
+            ctx.beginPath(); ctx.arc(sx,sy, p.r*6, 0, Math.PI*2);
+            ctx.fillStyle = gl; ctx.fill();
+            ctx.beginPath(); ctx.arc(sx,sy, p.r, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(156,234,172,${op*1.3})`; ctx.fill();
+            p.x += p.vx; p.y += p.vy;
+            if (p.y < -0.04) p.y = 1.05;
+            if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+        });
+
+        T += 0.006;
+        requestAnimationFrame(frame);
     }
-}
-window.addEventListener('online', updateConnectionStatus);
-window.addEventListener('offline', updateConnectionStatus);
-updateConnectionStatus();
+    frame();
+})();
 
-// CSRF Token for AJAX
+/* ════════════════════════════════════════
+   SIDEBAR TOGGLE
+════════════════════════════════════════ */
+let collapsed = false;
+function toggleSidebar() {
+    collapsed = !collapsed;
+    const sb = document.getElementById('sidebar');
+    const tb = document.getElementById('topbar');
+    const mc = document.getElementById('mainContent');
+    sb.classList.toggle('collapsed', collapsed);
+    const w = collapsed ? '60px' : '215px';
+    tb.style.left = w;
+    mc.style.marginLeft = w;
+}
+
+/* ════════════════════════════════════════
+   CONNECTION STATUS
+════════════════════════════════════════ */
+function updateConn() {
+    const b = document.getElementById('connectionBadge');
+    const d = document.getElementById('connectionDot');
+    const t = document.getElementById('connectionText');
+    const on = navigator.onLine;
+    b.className = 'connection-badge ' + (on?'online':'offline');
+    d.className = 'connection-dot '   + (on?'online':'offline');
+    t.textContent = on ? 'En línea' : 'Sin conexión';
+}
+window.addEventListener('online', updateConn);
+window.addEventListener('offline', updateConn);
+updateConn();
+
+/* CSRF */
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
-// Global confirm handler for all delete forms
+/* Confirm delete */
 document.addEventListener('submit', function(e) {
-    const form = e.target;
-    const msg = form.getAttribute('data-confirm');
-    if (msg) {
-        if (!window.confirm(msg)) {
-            e.preventDefault();
-            return false;
-        }
-    }
+    const msg = e.target.getAttribute('data-confirm');
+    if (msg && !window.confirm(msg)) { e.preventDefault(); return false; }
 });
-
 </script>
 @yield('scripts')
 </body>

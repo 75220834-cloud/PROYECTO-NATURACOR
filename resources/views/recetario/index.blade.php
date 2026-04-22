@@ -28,9 +28,9 @@
         <div class="nc-card h-100" style="transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='';this.style.boxShadow='';">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                    <h6 class="mb-1 fw-700" style="color: #1a2e1a;">{{ $enfermedad->nombre }}</h6>
+                    <h6 class="mb-1 fw-700" style="color: #ffffff;">{{ $enfermedad->nombre }}</h6>
                     @if($enfermedad->categoria)
-                    <span class="badge" style="background: var(--nc-green-100); color: var(--nc-green-700); border-radius:20px; font-size:11px; font-weight:600;">{{ $enfermedad->categoria }}</span>
+                    <span class="badge" style="background: rgba(40,199,111,0.15); color: #86efac; border-radius:20px; font-size:11px; font-weight:600;">{{ $enfermedad->categoria }}</span>
                     @endif
                 </div>
                 <div class="d-flex gap-1">
@@ -50,15 +50,15 @@
             </div>
             @if($enfermedad->productos->count())
                 @foreach($enfermedad->productos->take(3) as $p)
-                <div class="d-flex align-items-center gap-2 mb-1" style="background: var(--nc-green-50); border-radius:8px; padding:6px 10px;">
+                <div class="d-flex align-items-center gap-2 mb-1" style="background: rgba(40,199,111,0.08); border-radius:8px; padding:6px 10px;">
                     <i class="bi bi-dot" style="color: var(--nc-green-500); font-size:20px; margin:-4px;"></i>
                     <div style="flex:1;">
-                        <span style="font-size:13px; font-weight:500; color:#1a2e1a;">{{ $p->nombre }}</span>
+                        <span style="font-size:13px; font-weight:500; color:#ffffff;">{{ $p->nombre }}</span>
                         <span style="font-size:12px; color: var(--nc-green-700); float:right;">S/ {{ number_format($p->precio, 2) }}</span>
                     </div>
                 </div>
                 @if($p->pivot->instrucciones)
-                <div style="font-size:11px; color:#6b7280; padding: 0 10px 4px 24px; font-style:italic;">{{ $p->pivot->instrucciones }}</div>
+                <div style="font-size:11px; color:#9caea4; padding: 0 10px 4px 24px; font-style:italic;">{{ $p->pivot->instrucciones }}</div>
                 @endif
                 @endforeach
                 @if($enfermedad->productos->count() > 3)

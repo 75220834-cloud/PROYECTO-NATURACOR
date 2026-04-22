@@ -286,7 +286,9 @@ class VentaController extends Controller
     public function update(Request $request, Venta $venta) { abort(405); }
     public function destroy(Venta $venta)
     {
-        $this->authorize('delete-ventas');
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Solo el administrador puede anular ventas.');
+        }
         $venta->update(['estado' => 'anulada']);
         return back()->with('success', 'Venta anulada correctamente.');
     }

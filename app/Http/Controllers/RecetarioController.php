@@ -12,8 +12,10 @@ class RecetarioController extends Controller
     {
         $query = Enfermedad::with('productos')->where('activa', true);
         if ($request->search) {
-            $query->where('nombre', 'like', "%{$request->search}%")
+            $query->where(function($q) use ($request) {
+                $q->where('nombre', 'like', "%{$request->search}%")
                   ->orWhere('categoria', 'like', "%{$request->search}%");
+            });
         }
         $enfermedades = $query->orderBy('nombre')->get();
         return view('recetario.index', compact('enfermedades'));

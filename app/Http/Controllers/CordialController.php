@@ -16,8 +16,8 @@ class CordialController extends Controller
     public function index(Request $request)
     {
         $query = CordialVenta::with(['venta.cliente', 'venta.empleado'])
-            ->whereHas('venta', fn($q) =>
-                $q->where('sucursal_id', auth()->user()->sucursal_id)
+            ->when(auth()->user()->sucursal_id, fn($q, $sid) =>
+                $q->whereHas('venta', fn($sub) => $sub->where('sucursal_id', $sid))
             );
 
         if ($request->fecha) {

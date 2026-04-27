@@ -140,6 +140,16 @@
                 @endforeach
             </div>
 
+            <div class="mb-3">
+                <label for="clienteIa" class="form-label">Cliente para análisis personalizado (opcional)</label>
+                <select id="clienteIa" class="form-select">
+                    <option value="">Sin cliente específico</option>
+                    @foreach($clientes as $c)
+                        <option value="{{ $c->id }}">{{ $c->dni }} — {{ trim($c->nombre.' '.$c->apellido) }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Input -->
             <div class="d-flex gap-2">
                 <input type="text" id="consultaIA" class="form-control"
@@ -209,6 +219,7 @@ function preguntar(texto) {
 function enviarConsulta() {
     const input = document.getElementById('consultaIA');
     const consulta = input.value.trim();
+    const clienteId = document.getElementById('clienteIa')?.value || null;
     if (!consulta) return;
 
     const chat = document.getElementById('chatHistory');
@@ -234,7 +245,7 @@ function enviarConsulta() {
     fetch('/ia/analizar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-        body: JSON.stringify({ consulta })
+        body: JSON.stringify({ consulta, cliente_id: clienteId || null })
     })
     .then(r => r.json())
     .then(data => {

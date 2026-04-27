@@ -139,7 +139,16 @@ class FidelizacionTest extends TestCase
         ]);
 
         $cliente->refresh();
-        $this->assertEquals(0, (float) $cliente->acumulado_naturales);
+
+        // El acumulado ahora es permanente: no se reinicia a cero,
+        // sino que crece con cada compra.
+        $this->assertGreaterThan(0, (float) $cliente->acumulado_naturales);
+
+        // Pero sí se generó el canje correctamente
+        $this->assertDatabaseHas('fidelizacion_canjes', [
+            'cliente_id' => $cliente->id,
+            'tipo_regla' => 'regla1_500',
+        ]);
     }
 
     #[Test]

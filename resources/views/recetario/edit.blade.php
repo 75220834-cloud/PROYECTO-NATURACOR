@@ -33,7 +33,7 @@
             <h6 class="fw-bold mb-3">🌿 Productos Recomendados</h6>
             <div id="productosContainer">
                 @foreach($recetario->productos as $i => $prod)
-                <div class="d-flex align-items-center gap-2 mb-2 p-3 rounded-3" style="background:#f0fdf4;">
+                <div class="d-flex align-items-center gap-2 mb-2 p-3 rounded-3" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">
                     <div class="flex-grow-1">
                         <div class="fw-semibold" style="font-size:13px;">🌿 {{ $prod->nombre }}</div>
                         <input type="text" name="productos[{{ $i }}][instrucciones]" value="{{ $prod->pivot->instrucciones }}"
@@ -77,7 +77,8 @@ document.getElementById('addBtn').addEventListener('click', function() {
     const container = document.getElementById('productosContainer');
     const row = document.createElement('div');
     row.className = 'd-flex align-items-center gap-2 mb-2 p-3 rounded-3';
-    row.style.background = '#f0fdf4';
+    row.style.background = 'rgba(255,255,255,0.05)';
+    row.style.border = '1px solid rgba(255,255,255,0.1)';
     row.innerHTML = `
         <div class="flex-grow-1">
             <div class="fw-semibold" style="font-size:13px;">🌿 ${nombre}</div>

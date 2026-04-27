@@ -68,7 +68,7 @@
 
 @if($premiosPendientes > 0)
 <div class="alert mb-4 d-flex align-items-center gap-3" style="border-radius:14px; border:2px solid #bbf7d0; background:linear-gradient(135deg,#dcfce7,#bbf7d0);">
-    <div style="font-size:28px;">🏆</div>
+    <div style="font-size:28px;">🎁</div>
     <div class="flex-grow-1">
         <strong style="color:#166534;">¡{{ $premiosPendientes }} premio(s) pendiente(s) de entrega!</strong>
         <div style="font-size:13px; color:#15803d;">Clientes que alcanzaron S/500 en productos y esperan su botella 2L de Nopal</div>
@@ -78,6 +78,95 @@
     </a>
 </div>
 @endif
+
+{{-- ── WIDGET IA RECOMENDADOR ── --}}
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="nc-card" style="border:1px solid rgba(129,140,248,0.30); background:rgba(129,140,248,0.06);">
+            <div class="nc-card-header">
+                <span>
+                    <i class="bi bi-cpu me-2" style="color:#818cf8;"></i>
+                    <span style="color:#818cf8; font-weight:700;">Módulo IA</span>
+                    — Recomendador inteligente de productos
+                    <span class="ms-2" style="font-size:11px; color:rgba(255,255,255,0.35);">últimas 24h</span>
+                </span>
+                <a href="{{ route('metricas.recomendaciones') }}"
+                   class="btn btn-sm"
+                   style="border:1px solid rgba(129,140,248,0.40); color:#818cf8; background:rgba(129,140,248,0.10); border-radius:8px; font-size:12px; font-weight:600;">
+                    Ver métricas completas →
+                </a>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                    <div style="background:rgba(129,140,248,0.10); border:1px solid rgba(129,140,248,0.20); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Recomendaciones</div>
+                        <div style="font-size:28px; font-weight:700; color:#818cf8;">{{ number_format($metricasIA['total_mostrada']) }}</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35);">listas mostradas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:rgba(56,189,248,0.10); border:1px solid rgba(56,189,248,0.20); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Convertidas</div>
+                        <div style="font-size:28px; font-weight:700; color:#38bdf8;">{{ number_format($metricasIA['total_comprada']) }}</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35);">compras atribuidas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:rgba(134,239,172,0.10); border:1px solid rgba(134,239,172,0.20); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Tasa conversión</div>
+                        <div style="font-size:28px; font-weight:700; color:#86efac;">
+                            @if($metricasIA['conversion_compra_sobre_mostrada'] !== null)
+                                {{ number_format($metricasIA['conversion_compra_sobre_mostrada'] * 100, 1) }}%
+                            @else
+                                —
+                            @endif
+                        </div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35);">compra / mostrada</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div style="background:rgba(252,211,77,0.10); border:1px solid rgba(252,211,77,0.20); border-radius:12px; padding:14px; text-align:center;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Precision@{{ $metricasIA['precision_k'] }}</div>
+                        <div style="font-size:28px; font-weight:700; color:#fcd34d;">
+                            @if($metricasIA['precision_at_k'] !== null)
+                                {{ number_format($metricasIA['precision_at_k'] * 100, 1) }}%
+                            @else
+                                —
+                            @endif
+                        </div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35);">acierto en top-k</div>
+                    </div>
+                </div>
+            </div>
+
+            @if($metricasIA['total_mostrada'] > 0)
+            <div style="background:rgba(0,0,0,0.20); border-radius:10px; padding:12px 16px;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span style="font-size:12px; color:rgba(255,255,255,0.50);">Efectividad del motor IA hoy</span>
+                    <span style="font-size:12px; color:#818cf8; font-weight:600;">
+                        {{ $metricasIA['total_comprada'] }} de {{ $metricasIA['total_mostrada'] }} recomendaciones resultaron en venta
+                    </span>
+                </div>
+                @php
+                    $pct = $metricasIA['total_mostrada'] > 0
+                        ? min(100, round($metricasIA['total_comprada'] / $metricasIA['total_mostrada'] * 100))
+                        : 0;
+                @endphp
+                <div style="background:rgba(255,255,255,0.07); border-radius:20px; height:8px;">
+                    <div style="width:{{ $pct }}%; background:linear-gradient(90deg,#818cf8,#38bdf8); border-radius:20px; height:8px;"></div>
+                </div>
+            </div>
+            @else
+            <div style="text-align:center; padding:8px; color:rgba(255,255,255,0.30); font-size:13px;">
+                <i class="bi bi-info-circle me-1"></i>
+                Sin actividad del recomendador en las últimas 24h. Los datos aparecen cuando se atiende un cliente en el POS.
+            </div>
+            @endif
+
+        </div>
+    </div>
+</div>
 
 <div class="row g-4 mb-4">
     <!-- Gráfico de ventas semana -->
@@ -159,6 +248,74 @@
             @endforeach
         </div>
         @endif
+
+        {{-- ── BLOQUE 5 · WIDGET PRONÓSTICO DE DEMANDA (SES) ── --}}
+        <div class="nc-card mb-4" @if(!empty($forecastRiesgo)) style="border: 2px dashed #fcd34d;" @endif>
+            <div class="nc-card-header">
+                <span>
+                    <i class="bi bi-graph-up-arrow me-2 text-warning"></i>Pronóstico de demanda · próxima semana
+                </span>
+                <span class="badge bg-warning-subtle text-warning rounded-pill" style="font-size:11px;">SES</span>
+            </div>
+            @if(empty($forecastRiesgo))
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-graph-up" style="font-size:36px; opacity:0.3;"></i>
+                    <p class="mt-2 small mb-1">Sin productos en riesgo de quiebre.</p>
+                    <p class="small text-muted mb-0" style="font-size:11px;">
+                        El modelo se entrena cada lunes 03:00. Ejecuta
+                        <code>php artisan tinker</code> y dispara
+                        <code>(new App\Jobs\Recommendation\ActualizarDemandaJob)->handle(app(App\Services\Forecasting\DemandaForecastService::class))</code>
+                        para forzar.
+                    </p>
+                </div>
+            @else
+                <p class="text-muted small mb-2" style="font-size:11px;">
+                    Productos cuya predicción para la próxima semana ISO
+                    <strong>excede el stock actual</strong>. Ordenados por déficit
+                    (predicción − stock). El modelo es Suavizado Exponencial
+                    Simple; no captura estacionalidad.
+                </p>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead style="font-size:11px; color:#6b7280; text-transform:uppercase;">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Stock</th>
+                                <th class="text-end">Predicción</th>
+                                <th class="text-end">Déficit</th>
+                                <th class="text-end">MAPE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($forecastRiesgo as $row)
+                                <tr>
+                                    <td style="font-size:13px; font-weight:500;">{{ $row['nombre'] }}</td>
+                                    <td class="text-end" style="font-size:13px;">{{ $row['stock'] }}</td>
+                                    <td class="text-end" style="font-size:13px;">
+                                        {{ number_format($row['prediccion'], 1) }}
+                                        @if($row['intervalo_inf'] !== null && $row['intervalo_sup'] !== null)
+                                            <span class="text-muted" style="font-size:10px;">
+                                                [{{ number_format($row['intervalo_inf'], 0) }}–{{ number_format($row['intervalo_sup'], 0) }}]
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end" style="font-size:13px; font-weight:600; color:#dc2626;">
+                                        +{{ number_format($row['deficit'], 1) }}
+                                    </td>
+                                    <td class="text-end" style="font-size:11px; color:#6b7280;">
+                                        @if($row['mape'] !== null)
+                                            {{ number_format($row['mape'] * 100, 1) }}%
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
 
         <!-- Caja activa -->
         @if($cajaActiva)

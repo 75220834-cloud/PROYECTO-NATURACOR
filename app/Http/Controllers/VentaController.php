@@ -7,14 +7,19 @@ use App\Models\DetalleVenta;
 use App\Models\CordialVenta;
 use App\Models\Producto;
 use App\Models\Cliente;
-use App\Models\FidelizacionCanje;
 use App\Models\CajaSesion;
+use App\Services\Fidelizacion\FidelizacionService;
+use App\Services\Recommendation\AbTestingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class VentaController extends Controller
 {
+    public function __construct(
+        private readonly FidelizacionService $fidelizacionService,
+        private readonly AbTestingService $ab,
+    ) {}
+
     // POS - Pantalla principal de venta
     public function pos()
     {
@@ -101,6 +106,10 @@ class VentaController extends Controller
             $venta->metodos_pago_detalle = $request->metodos_pago_detalle ?? null;
             $venta->caja_sesion_id    = $cajaActiva?->id;
             $venta->estado            = 'completada';
+            // [BLOQUE 4] Estampamos el grupo A/B del cliente al momento de la
+            // venta. Si el cliente no está identificado (venta walk-in),
+            // queda en 'sin_ab' porque no podríamos atribuirla al experimento.
+            $venta->grupo_ab          = $this->ab->asignarGrupo($cliente?->id);
             $venta->save();
 
             $venta->numero_boleta = $venta->generarNumeroBoleta();
@@ -187,9 +196,9 @@ class VentaController extends Controller
     }
 
     /**
-     * Fidelización 2026:
-     * - Regla 1 (Naturales): acumulado_naturales >= S/500 → 1 Botella de Litro Especial gratis
-     * Solo aplica dentro del período 2026-01-01 al 2026-12-31.
+     * Fidelización permanente:
+     * - acumulado histórico sin reset
+     * - premios emitidos por hitos: floor(acumulado / umbral)
      */
     private function procesarFidelizacion(Venta $venta, ?Cliente $cliente, array $lineas, Request $request): array
     {
@@ -200,15 +209,12 @@ class VentaController extends Controller
         $fin    = config('naturacor.fidelizacion_fin',    '2026-12-31');
         if ($hoy < $inicio || $hoy > $fin) return [];
 
-        $canjes = [];
-
-        // ─── Regla 1: Productos Naturales + Cordiales ─────────────────────
-        // 1. Sumar los que pasaron como productos regulares (naturales o cordiales)
+        // 1) Sumar los que pasaron como productos regulares (naturales o cordiales)
         $montoProductos = collect($lineas)
             ->filter(fn($l) => in_array($l['producto']->tipo, ['natural', 'cordial']))
             ->sum('subtotal');
 
-        // 2. Sumar cordiales rápidos (excluyendo invitados/gratis)
+        // 2) Sumar cordiales rápidos (excluyendo invitados/gratis)
         $montoCordiales = 0;
         if ($request->has('cordial')) {
             foreach ($request->cordial as $c) {
@@ -220,34 +226,11 @@ class VentaController extends Controller
         }
 
         $montoTotal = $montoProductos + $montoCordiales;
-
-        if ($montoTotal > 0) {
-            $cliente->increment('acumulado_naturales', $montoTotal);
-            $cliente->refresh();
-
-            $umbral = config('naturacor.fidelizacion_monto', 500);
-            if ((float) $cliente->acumulado_naturales >= $umbral) {
-                $canje = FidelizacionCanje::create([
-                    'cliente_id'        => $cliente->id,
-                    'venta_id'          => $venta->id,
-                    'tipo_regla'        => FidelizacionCanje::REGLA_NATURALES,
-                    'valor_premio'      => 0,
-                    'descripcion'       => "Premio por S/{$cliente->acumulado_naturales} acumulado en naturales",
-                    'descripcion_premio'=> '1 Botella de Litro Especial gratis (S/40)',
-                    'entregado'         => false,
-                ]);
-                $cliente->acumulado_naturales = 0;
-                $cliente->save();
-                $canjes[] = [
-                    'tipo_regla'        => $canje->tipo_regla,
-                    'descripcion_premio'=> $canje->descripcion_premio,
-                ];
-            }
-        }
-
-
-
-        return $canjes;
+        return $this->fidelizacionService->registrarAcumuladoYGenerarCanjes(
+            $venta,
+            $cliente,
+            (float) $montoTotal
+        );
     }
 
     private function actualizarCaja(CajaSesion $caja, Venta $venta)

@@ -14,6 +14,7 @@ class Venta extends Model
         'numero_boleta', 'cliente_id', 'user_id', 'sucursal_id',
         'subtotal', 'igv', 'total', 'descuento_total', 'metodo_pago',
         'metodos_pago_detalle', 'estado', 'incluir_igv', 'notas', 'caja_sesion_id',
+        'grupo_ab',
     ];
 
     protected $casts = [

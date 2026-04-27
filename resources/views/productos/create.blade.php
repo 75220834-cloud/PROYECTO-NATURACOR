@@ -67,6 +67,22 @@
                     <small class="text-muted" style="font-size:11px;">JPG, PNG o WebP. Máximo 2MB. Se mostrará en el catálogo público.</small>
                     @error('imagen')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" style="font-size:13px;">🔖 Código de barras</label>
+                    <div class="input-group">
+                        <input type="text" name="codigo_barras" id="codigo_barras_create"
+                            value="{{ old('codigo_barras') }}"
+                            class="form-control rounded-start-3 @error('codigo_barras') is-invalid @enderror"
+                            placeholder="Escanea o escribe el código"
+                            maxlength="50" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary" title="Enfocar para escanear"
+                            onclick="document.getElementById('codigo_barras_create').focus()">
+                            <i class="bi bi-upc-scan"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted" style="font-size:11px;">Opcional. Apunta el escáner USB aquí y escanea. Debe ser único.</small>
+                    @error('codigo_barras')<div class="text-danger" style="font-size:12px;">{{ $message }}</div>@enderror
+                </div>        
                 <div class="col-12">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="frecuente" id="frecuente" value="1" {{ old('frecuente')?'checked':'' }}>

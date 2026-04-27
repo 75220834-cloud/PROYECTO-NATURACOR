@@ -2,15 +2,72 @@
 @section('title', 'Recetario Natural')
 @section('page-title', '📋 Recetario Natural')
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
+{{-- Modal Importar --}}
+<div id="modalImportarRecetario" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.70);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+    <div style="background:rgba(7,26,16,0.97);border:1px solid rgba(40,199,111,0.30);border-radius:20px;padding:32px;width:100%;max-width:440px;">
+        <h5 class="fw-bold mb-3" style="color:#28c76f;"><i class="bi bi-upload me-2"></i>Importar Recetario</h5>
+        <p style="font-size:13px;color:rgba(255,255,255,0.60);">
+            Sube un archivo Excel (.xlsx) con el formato de la plantilla.
+            Las enfermedades existentes por nombre serán actualizadas y los productos se agregarán
+            sin borrar los que ya tenías.
+        </p>
+        <form action="{{ route('recetario.importar') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="mb-3">
+                <input type="file" name="archivo" accept=".xlsx,.xls,.csv" class="form-control" required>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-light flex-grow-1"
+                        onclick="document.getElementById('modalImportarRecetario').style.display='none'">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-naturacor flex-grow-1">
+                    <i class="bi bi-upload me-1"></i>Importar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h5 class="mb-1 fw-700">Enfermedades y Tratamientos Naturales</h5>
         <span class="text-muted" style="font-size:13px;">Guía de productos recomendados por enfermedad</span>
     </div>
-    <a href="{{ route('recetario.create') }}" class="btn btn-naturacor">
-        <i class="bi bi-plus-lg me-2"></i>Nueva Entrada
-    </a>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ route('recetario.create') }}" class="btn btn-naturacor">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Entrada
+        </a>
+        <a href="{{ route('recetario.exportar') }}" class="btn btn-naturacor-outline">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+        <a href="{{ route('recetario.plantilla') }}" class="btn btn-naturacor-outline">
+            <i class="bi bi-download me-1"></i>Plantilla Excel
+        </a>
+        <button type="button" class="btn btn-naturacor-outline"
+                onclick="document.getElementById('modalImportarRecetario').style.display='flex'">
+            <i class="bi bi-upload me-1"></i>Importar Excel
+        </button>
+    </div>
 </div>
+
+{{-- Errores de import (si los hubo) --}}
+@if(session('errores_import') && count(session('errores_import')) > 0)
+<div class="nc-card mb-4" style="border:1px solid rgba(231,76,60,0.30); background:rgba(231,76,60,0.07);">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="fw-bold mb-0" style="color:#fca5a5;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Avisos de la importación ({{ count(session('errores_import')) }})
+        </h6>
+        <small style="color:rgba(255,255,255,0.45);">Las enfermedades sí se procesaron — los productos no encontrados quedaron sin asociar.</small>
+    </div>
+    <ul style="font-size:13px; color:rgba(255,255,255,0.75); margin:0; padding-left:18px;">
+        @foreach(session('errores_import') as $err)
+            <li>{{ $err }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
 
 <!-- Buscador -->
 <div class="nc-card mb-4">

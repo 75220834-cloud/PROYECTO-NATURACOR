@@ -49,6 +49,156 @@
     </div>
 </div>
 
+<!-- Perfil de Salud -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header border-0 px-4 py-3 d-flex justify-content-between align-items-center"
+         style="background:rgba(56,189,248,0.08);">
+        <h6 class="fw-bold mb-0" style="color:#38bdf8;">
+            <i class="bi bi-heart-pulse me-2"></i>🏥 Perfil de Salud
+        </h6>
+        <button class="btn btn-sm" style="border:1px solid rgba(56,189,248,0.40);color:#38bdf8;border-radius:8px;font-size:12px;"
+                onclick="toggleEditorPadecimientos()">
+            <i class="bi bi-pencil me-1"></i>Editar padecimientos
+        </button>
+    </div>
+    <div class="card-body px-4 py-3">
+
+        {{-- Padecimientos actuales --}}
+        <div id="padecimientosActuales">
+            @php
+                $padecimientos = $cliente->padecimientos()->with('enfermedad')->get();
+            @endphp
+            @if($padecimientos->isEmpty())
+                <p class="text-muted mb-0" style="font-size:13px;">
+                    <i class="bi bi-info-circle me-1"></i>Sin padecimientos registrados aún.
+                </p>
+            @else
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach($padecimientos as $pad)
+                    <span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);font-size:12px;padding:6px 12px;border-radius:20px;">
+                        <i class="bi bi-heart-pulse me-1"></i>{{ $pad->enfermedad->nombre }}
+                    </span>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        {{-- Editor de padecimientos (oculto por defecto) --}}
+        <div id="editorPadecimientos" style="display:none;" class="mt-3">
+            <hr style="border-color:rgba(56,189,248,0.20);">
+            <p style="font-size:12px;color:rgba(255,255,255,0.50);">
+                Selecciona los padecimientos del cliente:
+            </p>
+            @php
+                $todasEnfermedades = \App\Models\Enfermedad::where('activa', true)->orderBy('nombre')->get();
+                $padecimientosIds  = $cliente->padecimientos()->pluck('enfermedad_id')->toArray();
+            @endphp
+            <div class="d-flex flex-wrap gap-2 mb-3" id="chipsEnfermedades">
+                @foreach($todasEnfermedades as $enf)
+                <button type="button"
+                        class="chip-enfermedad"
+                        data-id="{{ $enf->id }}"
+                        data-seleccionado="{{ in_array($enf->id, $padecimientosIds) ? '1' : '0' }}"
+                        onclick="toggleChip(this)"
+                        style="
+                            display:inline-flex;align-items:center;gap:6px;
+                            padding:7px 14px;border-radius:20px;cursor:pointer;
+                            font-size:12px;font-weight:500;font-family:inherit;
+                            transition:all 0.15s;
+                            {{ in_array($enf->id, $padecimientosIds)
+                                ? 'background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.60);color:#38bdf8;'
+                                : 'background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.60);' }}
+                        ">
+                    {{ $enf->nombre }}
+                </button>
+                @endforeach
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" onclick="toggleEditorPadecimientos()"
+                        class="btn btn-sm btn-light px-4">
+                    Cancelar
+                </button>
+                <button type="button" onclick="guardarPadecimientosCliente({{ $cliente->id }})"
+                        class="btn btn-sm px-4"
+                        style="background:rgba(56,189,248,0.20);border:1px solid rgba(56,189,248,0.50);color:#38bdf8;border-radius:8px;">
+                    <i class="bi bi-check2 me-1"></i>Guardar
+                </button>
+            </div>
+            <div id="padecimientoMsg" class="mt-2" style="font-size:12px;display:none;"></div>
+        </div>
+
+    </div>
+</div>
+
+@section('scripts')
+<script>
+function toggleEditorPadecimientos() {
+    const editor = document.getElementById('editorPadecimientos');
+    editor.style.display = editor.style.display === 'none' ? '' : 'none';
+}
+
+function toggleChip(btn) {
+    const activo = btn.dataset.seleccionado === '1';
+    if (activo) {
+        btn.dataset.seleccionado = '0';
+        btn.style.background = 'rgba(255,255,255,0.05)';
+        btn.style.border = '1px solid rgba(255,255,255,0.12)';
+        btn.style.color = 'rgba(255,255,255,0.60)';
+    } else {
+        btn.dataset.seleccionado = '1';
+        btn.style.background = 'rgba(56,189,248,0.18)';
+        btn.style.border = '1px solid rgba(56,189,248,0.60)';
+        btn.style.color = '#38bdf8';
+    }
+}
+
+function guardarPadecimientosCliente(clienteId) {
+    const seleccionados = Array.from(
+        document.querySelectorAll('.chip-enfermedad')
+    ).filter(b => b.dataset.seleccionado === '1')
+     .map(b => parseInt(b.dataset.id));
+
+    const msg = document.getElementById('padecimientoMsg');
+    msg.style.display = '';
+    msg.style.color = '#9caea4';
+    msg.textContent = 'Guardando...';
+
+    fetch(`/api/clientes/${clienteId}/padecimientos`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ enfermedad_ids: seleccionados })
+    })
+    .then(r => r.json())
+    .then(data => {
+        msg.style.color = '#38bdf8';
+        msg.textContent = '✓ Perfil de salud guardado correctamente.';
+        // Recargar los badges actuales
+        const cont = document.getElementById('padecimientosActuales');
+        const pads = data.padecimientos || [];
+        if (pads.length === 0) {
+            cont.innerHTML = '<p class="text-muted mb-0" style="font-size:13px;"><i class="bi bi-info-circle me-1"></i>Sin padecimientos registrados aún.</p>';
+        } else {
+            cont.innerHTML = '<div class="d-flex flex-wrap gap-2">' +
+                pads.map(p => `<span class="badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.35);font-size:12px;padding:6px 12px;border-radius:20px;"><i class="bi bi-heart-pulse me-1"></i>${p.nombre}</span>`).join('') +
+            '</div>';
+        }
+        setTimeout(() => {
+            document.getElementById('editorPadecimientos').style.display = 'none';
+            msg.style.display = 'none';
+        }, 1500);
+    })
+    .catch(() => {
+        msg.style.color = '#fca5a5';
+        msg.textContent = '✗ Error al guardar. Intenta de nuevo.';
+    });
+}
+</script>
+@endsection
+
 <!-- Historial de compras -->
 <div class="card border-0 shadow-sm rounded-4">
     <div class="card-header bg-white border-0 px-4 py-3">

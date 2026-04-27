@@ -24,8 +24,8 @@
         <div class="col-6 col-md-4 col-lg-3 reveal">
             <div class="product-card">
                 <div class="product-img">
-                    @if($producto->imagen)
-                        <img src="{{ asset('storage/' . $producto->imagen) }}" alt="{{ $producto->nombre }}">
+                    @if($url = producto_image_url($producto))
+                        <img src="{{ $url }}" alt="{{ $producto->nombre }}" loading="lazy">
                     @else
                         <span class="emoji-placeholder">🌿</span>
                     @endif

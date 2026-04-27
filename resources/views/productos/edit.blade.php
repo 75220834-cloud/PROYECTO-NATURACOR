@@ -59,15 +59,31 @@
                 @endif
                 <div class="col-12">
                     <label class="form-label fw-semibold" style="font-size:13px;">📷 Imagen del producto</label>
-                    @if($producto->imagen)
+                    @if($url = producto_image_url($producto))
                     <div class="mb-2">
-                        <img src="{{ asset('storage/' . $producto->imagen) }}" alt="{{ $producto->nombre }}" style="height:80px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);">
+                        <img src="{{ $url }}" alt="{{ $producto->nombre }}" style="height:80px;border-radius:8px;border:1px solid rgba(255,255,255,0.10);">
                         <small class="text-muted d-block" style="font-size:11px;">Imagen actual. Sube otra para reemplazarla.</small>
                     </div>
                     @endif
                     <input type="file" name="imagen" class="form-control rounded-3 @error('imagen') is-invalid @enderror" accept="image/*">
                     <small class="text-muted" style="font-size:11px;">JPG, PNG o WebP. Máximo 2MB.</small>
                     @error('imagen')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold" style="font-size:13px;">🔖 Código de barras</label>
+                    <div class="input-group">
+                        <input type="text" name="codigo_barras" id="codigo_barras_edit"
+                            value="{{ old('codigo_barras', $producto->codigo_barras) }}"
+                            class="form-control rounded-start-3 @error('codigo_barras') is-invalid @enderror"
+                            placeholder="Escanea o escribe el código"
+                            maxlength="50" autocomplete="off">
+                        <button type="button" class="btn btn-outline-secondary" title="Enfocar para escanear"
+                            onclick="document.getElementById('codigo_barras_edit').focus()">
+                            <i class="bi bi-upc-scan"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted" style="font-size:11px;">Opcional. Apunta el escáner USB aquí y escanea. Debe ser único.</small>
+                    @error('codigo_barras')<div class="text-danger" style="font-size:12px;">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-12 d-flex gap-4">
                     <div class="form-check">

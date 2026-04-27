@@ -16,7 +16,7 @@ class FidelizacionController extends Controller
         $umbral = config('naturacor.fidelizacion_monto', 500);
         $filtro = $request->get('estado', 'todos');
 
-        $query = Cliente::withCount('ventas')
+        $query = Cliente::withCount(['ventas', 'canjes'])
             ->addSelect([
                 'total_productos' => \App\Models\DetalleVenta::selectRaw('COALESCE(SUM(detalle_ventas.subtotal), 0)')
                     ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
@@ -37,7 +37,7 @@ class FidelizacionController extends Controller
 
         // Clasificar clientes
         $enProgreso = $clientes->filter(fn($c) => (float) $c->acumulado_naturales > 0 && (float) $c->acumulado_naturales < $umbral);
-        $listosParaPremio = $clientes->filter(fn($c) => (float) $c->acumulado_naturales >= $umbral);
+        $listosParaPremio = $clientes->filter(fn($c) => $c->premiosTeoricosDisponibles() > 0);
 
         // Canjes pendientes y entregados
         $canjesPendientes = FidelizacionCanje::with('cliente')
@@ -77,11 +77,6 @@ class FidelizacionController extends Controller
             'entregado_at' => now(),
         ]);
 
-        // Reiniciar acumulado del cliente a 0 para que pueda ganar otro premio
-        $canje->cliente->update([
-            'acumulado_naturales' => 0,
-        ]);
-
         // Descontar 1 unidad del producto Litro Especial del inventario
         $productoEspecial = \App\Models\Producto::where('activo', true)
             ->where('nombre', 'like', '%litro especial%')
@@ -92,6 +87,6 @@ class FidelizacionController extends Controller
             $productoEspecial->decrement('stock', 1);
         }
 
-        return back()->with('success', "Premio '{$canje->descripcion_premio}' entregado a {$canje->cliente->nombreCompleto()}. Su acumulado se reinició a S/0 para un nuevo ciclo.");
+        return back()->with('success', "Premio '{$canje->descripcion_premio}' entregado a {$canje->cliente->nombreCompleto()}. El acumulado histórico del cliente se mantiene.");
     }
 }

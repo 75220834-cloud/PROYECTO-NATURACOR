@@ -16,6 +16,9 @@ use App\Http\Controllers\ReclamoController;
 use App\Http\Controllers\CordialController;
 use App\Http\Controllers\FidelizacionController;
 use App\Http\Controllers\CatalogoController;
+use App\Http\Controllers\RecomendacionController;
+use App\Http\Controllers\RecomendacionMetricasController;
+use App\Http\Controllers\HeatmapEnfermedadesController;
 
 // Redirigir raíz al catálogo público
 Route::get('/', fn() => redirect('/catalogo'));
@@ -33,7 +36,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ventas/pos', [VentaController::class, 'pos'])->name('ventas.pos');
     Route::resource('ventas', VentaController::class)->except(['create', 'edit']);
 
-    // Productos
+    // Productos — rutas específicas ANTES del resource para evitar conflicto con {producto}
+    Route::get('/productos/exportar', [ProductoController::class, 'exportar'])->name('productos.exportar');
+    Route::get('/productos/plantilla', [ProductoController::class, 'plantilla'])->name('productos.plantilla');
+    Route::post('/productos/importar', [ProductoController::class, 'importar'])->name('productos.importar');
     Route::resource('productos', ProductoController::class);
     Route::get('/api/productos/buscar', [ProductoController::class, 'buscar'])->name('productos.buscar');
     Route::get('/api/productos/barcode', [ProductoController::class, 'buscarBarcode'])->name('productos.barcode');
@@ -41,6 +47,28 @@ Route::middleware(['auth'])->group(function () {
     // Clientes
     Route::resource('clientes', ClienteController::class);
     Route::get('/api/clientes/dni', [ClienteController::class, 'buscarDni'])->name('clientes.dni');
+    Route::get('/api/clientes/autocompletar', [ClienteController::class, 'autocompletar'])->name('clientes.autocompletar');
+
+    // Padecimientos del cliente (API JSON — único endpoint, consumido desde el POS)
+    // BUG 3 FIX: se eliminó el duplicado /clientes/{cliente}/padecimientos que reusaba
+    // el mismo nombre y rompía route('clientes.padecimientos').
+    Route::get('/api/clientes/{cliente}/padecimientos', [ClienteController::class, 'padecimientos'])
+        ->name('clientes.padecimientos');
+    Route::post('/api/clientes/{cliente}/padecimientos', [ClienteController::class, 'guardarPadecimientos'])
+        ->name('clientes.padecimientos.guardar');
+
+    // Recomendaciones (módulo inteligente Fase 1 — no modifica el POS; consumo opcional vía API)
+    Route::get('/api/recomendaciones/{cliente}', [RecomendacionController::class, 'show'])->name('api.recomendaciones.show');
+    Route::post('/api/recomendaciones/evento', [RecomendacionController::class, 'registrarEvento'])->name('api.recomendaciones.evento');
+
+    // Métricas del recomendador (evaluación / tesis)
+    Route::get('/metricas/recomendaciones', [RecomendacionMetricasController::class, 'index'])->name('metricas.recomendaciones');
+
+    // Bloque 6 — Mapa de calor de enfermedades (vista + export CSV)
+    Route::get('/metricas/heatmap-enfermedades', [HeatmapEnfermedadesController::class, 'index'])
+        ->name('metricas.heatmap_enfermedades');
+    Route::get('/metricas/heatmap-enfermedades/export.csv', [HeatmapEnfermedadesController::class, 'exportCsv'])
+        ->name('metricas.heatmap_enfermedades.csv');
 
     // Caja
     Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
@@ -59,7 +87,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/boletas/{venta}/whatsapp', [BoletaController::class, 'whatsapp'])->name('boletas.whatsapp');
     Route::get('/boletas/{venta}/ticket', [BoletaController::class, 'ticket'])->name('boletas.ticket');
 
-    // Recetario
+    // Recetario — rutas específicas ANTES del resource para evitar conflicto con {recetario}
+    Route::get('/recetario/exportar', [RecetarioController::class, 'exportar'])->name('recetario.exportar');
+    Route::get('/recetario/plantilla', [RecetarioController::class, 'plantilla'])->name('recetario.plantilla');
+    Route::post('/recetario/importar', [RecetarioController::class, 'importar'])->name('recetario.importar');
     Route::resource('recetario', RecetarioController::class);
 
     // IA

@@ -11,8 +11,9 @@
         <a href="{{ route('boletas.pdf', $venta) }}" class="btn btn-outline-danger btn-sm px-3" target="_blank">
             <i class="bi bi-file-pdf me-1"></i>PDF
         </a>
-        <a href="{{ route('boletas.ticket', $venta) }}" class="btn btn-secondary btn-sm px-3" target="_blank">
-            <i class="bi bi-printer me-1"></i>Ticket
+        <a href="{{ route('boletas.ticket', $venta) }}" class="btn btn-dark btn-sm px-3" target="_blank"
+            title="Imprimir en impresora térmica 80mm">
+            <i class="bi bi-printer-fill me-1"></i>🖨️ Ticket Térmico
         </a>
         @if($venta->cliente?->telefono)
         <a href="{{ route('boletas.whatsapp', $venta) }}" class="btn btn-success btn-sm px-3" target="_blank">

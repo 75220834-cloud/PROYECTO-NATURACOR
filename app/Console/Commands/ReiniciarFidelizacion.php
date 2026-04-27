@@ -2,42 +2,22 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Cliente;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ReiniciarFidelizacion extends Command
 {
     /**
-     * Reinicia los acumulados de fidelización de todos los clientes.
-     * Debe ejecutarse automáticamente el 01/01/2027.
-     * Uso manual: php artisan fidelizacion:reiniciar [--force]
+     * Comando legado: desde la refactorización, el acumulado es permanente.
      */
     protected $signature = 'fidelizacion:reiniciar {--force : Omite la verificación de fecha}';
-    protected $description = 'Reinicia los acumulados de fidelización (acumulado_naturales) de todos los clientes al inicio del nuevo año.';
+    protected $description = 'Comando legado: el acumulado de fidelización ahora es permanente y no se reinicia.';
 
     public function handle(): int
     {
-        if (!$this->option('force')) {
-            $hoy     = now()->format('Y-m-d');
-            $finProg = config('naturacor.fidelizacion_fin', '2026-12-31');
-
-            if ($hoy <= $finProg) {
-                $this->warn("El programa de fidelización aún está vigente hasta {$finProg}.");
-                $this->warn("Si deseas forzar el reinicio usa: php artisan fidelizacion:reiniciar --force");
-                return self::FAILURE;
-            }
-        }
-
-        if (!$this->confirm('¿Confirmas reiniciar TODOS los acumulados de fidelización? Esta acción no se puede deshacer.', false)) {
-            $this->info('Operación cancelada.');
-            return self::SUCCESS;
-        }
-
-        $totalClientes = Cliente::reiniciarAcumulados();
-
-        $this->info("✅ Acumulados reiniciados para {$totalClientes} clientes.");
-        Log::info("fidelizacion:reiniciar ejecutado. Clientes reiniciados: {$totalClientes}");
+        $this->warn('Este comando quedó deshabilitado: el acumulado de fidelización ahora es permanente.');
+        $this->line('No se realizó ningún cambio en clientes.');
+        Log::info('fidelizacion:reiniciar invocado en modo legado (sin cambios).');
 
         return self::SUCCESS;
     }

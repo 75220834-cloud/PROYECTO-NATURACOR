@@ -987,6 +987,11 @@
             </a>
         </div>
         <div class="nav-item">
+            <a href="{{ route('metricas.recomendaciones') }}" class="{{ request()->routeIs('metricas.recomendaciones') ? 'active' : '' }}">
+                <i class="bi bi-graph-up-arrow"></i><span class="nav-label">Métricas reco.</span>
+            </a>
+        </div>
+        <div class="nav-item">
             <a href="{{ route('recetario.index') }}" class="{{ request()->routeIs('recetario*') ? 'active' : '' }}">
                 <i class="bi bi-journal-medical"></i><span class="nav-label">Recetario</span>
             </a>

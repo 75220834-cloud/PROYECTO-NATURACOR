@@ -93,16 +93,19 @@ class ClienteUnitTest extends TestCase
         $user->assignRole($role);
 
         Cliente::factory()->create([
-            'acumulado_naturales'  => 200,
+            'acumulado_naturales' => 200,
         ]);
         Cliente::factory()->create([
-            'acumulado_naturales'  => 450,
+            'acumulado_naturales' => 450,
         ]);
 
         $count = Cliente::reiniciarAcumulados();
 
-        $this->assertEquals(2, $count);
-        $this->assertEquals(0, (float) Cliente::first()->acumulado_naturales);
+        // El acumulado ahora es permanente (no se reinicia).
+        // reiniciarAcumulados() retorna 0 por compatibilidad.
+        $this->assertEquals(0, $count);
+        // El acumulado no cambia
+        $this->assertEquals(200, (float) Cliente::first()->acumulado_naturales);
     }
 
     #[Test]

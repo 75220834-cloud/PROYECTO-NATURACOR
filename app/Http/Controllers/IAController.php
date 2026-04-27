@@ -2,22 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cliente;
+use App\Models\ClientePerfilAfinidad;
+use App\Models\DetalleVenta;
+use App\Models\Enfermedad;
 use App\Models\Producto;
 use App\Models\Venta;
-use App\Models\DetalleVenta;
-use App\Models\Cliente;
-use App\Models\Enfermedad;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Services\Recommendation\PerfilSaludService;
+use App\Services\Recommendation\RecomendacionEngine;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class IAController extends Controller
 {
+    public function __construct(
+        private readonly PerfilSaludService $perfilSaludService,
+        private readonly RecomendacionEngine $recomendacionEngine
+    ) {}
+
     public function index()
     {
         $analisis = $this->analizarNegocio();
+        $clientes = Cliente::query()
+            ->orderByDesc('updated_at')
+            ->limit(120)
+            ->get(['id', 'dni', 'nombre', 'apellido']);
+
         $groqKey  = config('naturacor.groq_api_key');
         $geminiKey = config('naturacor.gemini_api_key');
         $tieneApiKey = !empty($groqKey) || !empty($geminiKey);
@@ -31,60 +44,68 @@ class IAController extends Controller
             'modo_online'        => $modoOnline,
         ]);
 
-        return view('ia.index', compact('analisis', 'modoOnline'));
+        return view('ia.index', compact('analisis', 'modoOnline', 'clientes'));
     }
 
     public function analizar(Request $request)
     {
-        $consulta = $request->consulta ?? 'Analiza el negocio y dame recomendaciones';
-        $analisis = $this->analizarNegocio();
-
-        // 1. Intentar Groq primero (Llama 3 — api.groq.com)
-        $apiKeyGroq = config('naturacor.groq_api_key');
-        Log::info('IA analizar - Groq check', [
-            'key_present' => !empty($apiKeyGroq),
-            'key_length'  => strlen($apiKeyGroq ?? ''),
+        $data = $request->validate([
+            'consulta' => 'nullable|string|max:2000',
+            'cliente_id' => 'nullable|exists:clientes,id',
         ]);
+        $consulta = $data['consulta'] ?? 'Analiza el negocio y dame recomendaciones';
+        $cliente = isset($data['cliente_id']) ? Cliente::find($data['cliente_id']) : null;
+
+        $analisis = $this->analizarNegocio();
+        $contextoCliente = $this->construirContextoCliente($cliente, $request);
+        $contextoIa = $this->formatearContexto($analisis, $contextoCliente);
+        $promptDinamico = $this->construirPromptDinamico($consulta, $contextoIa);
+
+        // 1) Intentar Groq primero
+        $apiKeyGroq = config('naturacor.groq_api_key');
         if (!empty($apiKeyGroq)) {
-            $respuesta = $this->consultarGroq($consulta, $analisis);
+            $respuesta = $this->consultarGroq($consulta, $promptDinamico);
             if ($respuesta) {
-                return response()->json(['modo' => 'online', 'resultado' => $respuesta, 'analisis' => $analisis]);
+                return response()->json([
+                    'modo' => 'online',
+                    'resultado' => $respuesta,
+                    'analisis' => $analisis,
+                    'cliente_contexto' => $contextoCliente,
+                ]);
             }
-            Log::warning('IA analizar - Groq returned null, falling through to Gemini');
         }
 
-        // 2. Intentar Gemini como alternativa
+        // 2) Intentar Gemini
         $apiKeyGemini = config('naturacor.gemini_api_key');
         if (!empty($apiKeyGemini)) {
-            $respuesta = $this->consultarGemini($consulta, $analisis);
+            $respuesta = $this->consultarGemini($consulta, $promptDinamico);
             if ($respuesta) {
-                return response()->json(['modo' => 'online', 'resultado' => $respuesta, 'analisis' => $analisis]);
+                return response()->json([
+                    'modo' => 'online',
+                    'resultado' => $respuesta,
+                    'analisis' => $analisis,
+                    'cliente_contexto' => $contextoCliente,
+                ]);
             }
         }
 
-        // 3. Modo offline — análisis local
-        $respuestaInteligente = $this->generarRespuestaInteligente($consulta, $analisis);
+        // 3) Modo offline
+        $respuestaInteligente = $this->generarRespuestaInteligente($consulta, $analisis, $contextoCliente);
         return response()->json([
             'modo'      => 'offline',
             'resultado' => $respuestaInteligente,
             'analisis'  => $analisis,
+            'cliente_contexto' => $contextoCliente,
         ]);
     }
 
 
-    private function consultarGemini(string $consulta, array $analisis): ?string
+    private function consultarGemini(string $consulta, string $promptDinamico): ?string
     {
         try {
-            $contexto = $this->formatearContexto($analisis);
             $apiKey   = config('naturacor.gemini_api_key');
 
-            $systemInstruction =
-                "Eres NATURA, una inteligencia artificial avanzada integrada al sistema NATURACOR. " .
-                "Puedes responder CUALQUIER tipo de pregunta en español: ciencia, salud, tecnología, marketing, " .
-                "recetas, consejos de vida, matemáticas, historia, o cualquier otro tema. " .
-                "Cuando la pregunta esté relacionada con el negocio, usa los datos reales disponibles. " .
-                "Cuando sea una pregunta general, responde de forma completa, clara y útil en español. " .
-                "Datos actuales del negocio NATURACOR:\n{$contexto}";
+            $systemInstruction = $this->systemPromptBase()."\n\n".$promptDinamico;
 
             $response = Http::withOptions([
                 'connect_timeout' => 10,
@@ -123,18 +144,10 @@ class IAController extends Controller
         }
     }
 
-    private function consultarGroq(string $consulta, array $analisis): ?string
+    private function consultarGroq(string $consulta, string $promptDinamico): ?string
     {
         try {
-            $contexto = $this->formatearContexto($analisis);
-            $systemPrompt =
-                "Eres NATURA, una inteligencia artificial avanzada integrada al sistema NATURACOR (tienda de productos naturales en Perú). " .
-                "Puedes responder CUALQUIER tipo de pregunta en español: ciencia, salud, tecnología, marketing, " .
-                "recetas, historia, matemáticas o cualquier otro tema. " .
-                "Cuando la pregunta esté relacionada con el negocio, usa los datos reales disponibles. " .
-                "Cuando sea una pregunta general, responde de forma completa, clara y útil. " .
-                "Siempre responde en español.\n\n" .
-                "Datos actuales del negocio NATURACOR (úsalos si son relevantes):\n{$contexto}";
+            $systemPrompt = $this->systemPromptBase()."\n\n".$promptDinamico;
 
             $response = Http::withOptions([
                 'connect_timeout' => 10,
@@ -169,17 +182,16 @@ class IAController extends Controller
         }
     }
 
-    private function consultarOpenAI(string $consulta, array $analisis): ?string
+    private function consultarOpenAI(string $consulta, string $promptDinamico): ?string
     {
         try {
-            $contexto = $this->formatearContexto($analisis);
             $response = Http::timeout(15)->withHeaders([
                 'Authorization' => 'Bearer ' . config('naturacor.openai_api_key'),
                 'Content-Type' => 'application/json',
             ])->post('https://api.openai.com/v1/chat/completions', [
                 'model' => 'gpt-3.5-turbo',
                 'messages' => [
-                    ['role' => 'system', 'content' => "Eres un asistente experto en negocios de productos naturales en Perú. Analiza los datos y responde en español. Datos: {$contexto}"],
+                    ['role' => 'system', 'content' => $this->systemPromptBase()."\n\n".$promptDinamico],
                     ['role' => 'user', 'content' => $consulta],
                 ],
                 'max_tokens' => 600,
@@ -193,12 +205,37 @@ class IAController extends Controller
         }
     }
 
-    private function generarRespuestaInteligente(string $consulta, array $analisis): string
+    private function generarRespuestaInteligente(string $consulta, array $analisis, ?array $contextoCliente): string
     {
         $consulta = strtolower($consulta);
         $kw = fn($words) => collect($words)->some(fn($w) => str_contains($consulta, $w));
 
         $lineas = ["📊 **Análisis de NATURACOR** — " . now()->format('d/m/Y H:i'), ""];
+
+        if ($contextoCliente) {
+            $lineas[] = "👤 **Cliente analizado:** {$contextoCliente['cliente']['nombre']} (DNI {$contextoCliente['cliente']['dni']})";
+            $lineas[] = "• Frecuencia estimada: {$contextoCliente['patrones']['frecuencia_30d']} compra(s) en 30 días";
+            $lineas[] = "• Acumulado fidelización: S/".number_format((float) $contextoCliente['cliente']['acumulado_naturales'], 2);
+            $lineas[] = "";
+            $lineas[] = "🧠 **Condiciones inferidas por patrón de compra (no diagnóstico):**";
+            if (! empty($contextoCliente['enfermedades_inferidas'])) {
+                foreach ($contextoCliente['enfermedades_inferidas'] as $enf) {
+                    $lineas[] = "• {$enf['nombre']} (score {$enf['score_pct']}%, evidencias: {$enf['evidencias']})";
+                }
+            } else {
+                $lineas[] = "• Aún no hay señales suficientes en el historial.";
+            }
+            $lineas[] = "";
+            $lineas[] = "🌿 **Productos recomendados por motor real:**";
+            if (! empty($contextoCliente['recomendaciones']['items'])) {
+                foreach (array_slice($contextoCliente['recomendaciones']['items'], 0, 6) as $it) {
+                    $lineas[] = "• {$it['producto']['nombre']} — score {$it['score_final']}";
+                }
+            } else {
+                $lineas[] = "• Sin recomendaciones para este cliente en este momento.";
+            }
+            $lineas[] = "";
+        }
 
         // Respuesta basada en la consulta
         if ($kw(['vend', 'top', 'popular', 'más'])) {
@@ -350,7 +387,7 @@ class IAController extends Controller
         ];
     }
 
-    private function formatearContexto(array $analisis): string
+    private function formatearContexto(array $analisis, ?array $contextoCliente): string
     {
         $ctx = "DATOS DEL NEGOCIO NATURACOR:\n";
         $ctx .= "Ventas hoy: {$analisis['ventas_hoy']['count']} (S/{$analisis['ventas_hoy']['total']}). ";
@@ -395,7 +432,96 @@ class IAController extends Controller
             $ctx .= "- {$nombre} (DNI: {$c->dni}): Acumulado S/{$acum} | Falta S/" . number_format($falta, 2) . " para premio{$estado}\n";
         }
 
+        if ($contextoCliente) {
+            $ctx .= "\nCONTEXTO PERSONALIZADO DEL CLIENTE:\n";
+            $ctx .= json_encode($contextoCliente, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $ctx .= "\n";
+        }
+
         return $ctx;
+    }
+
+    private function construirPromptDinamico(string $consulta, string $contextoIa): string
+    {
+        return "ROL: Analista de salud naturista basado en datos de consumo y ventas reales.\n"
+            ."INSTRUCCIONES:\n"
+            ."- No des respuestas genéricas.\n"
+            ."- Si hay cliente en contexto, explica patrones reales, condiciones inferidas y recomendaciones concretas.\n"
+            ."- Explica por qué recomiendas cada producto según historial/perfil/tendencia.\n"
+            ."- Distingue explícitamente: inferencia de compra != diagnóstico médico.\n"
+            ."- Responde en español, con estructura clara y accionable.\n\n"
+            ."CONTEXTO DEL SISTEMA:\n{$contextoIa}\n\n"
+            ."CONSULTA DEL USUARIO:\n{$consulta}";
+    }
+
+    private function systemPromptBase(): string
+    {
+        return "Eres NATURA, un analista de salud naturista para NATURACOR. "
+            ."Tu prioridad es responder con base en datos reales del sistema: compras, perfil inferido, recetario y recomendaciones del motor. "
+            ."Evita respuestas vacías o genéricas; justifica con evidencia del contexto proporcionado.";
+    }
+
+    private function construirContextoCliente(?Cliente $cliente, Request $request): ?array
+    {
+        if (! $cliente) {
+            return null;
+        }
+
+        $this->perfilSaludService->asegurarPerfilReciente((int) $cliente->id, false);
+        $sucursalId = $request->user()?->sucursal_id;
+        $reco = $this->recomendacionEngine->recomendar($cliente, $sucursalId, 6, false);
+
+        $perfil = ClientePerfilAfinidad::query()
+            ->where('cliente_id', $cliente->id)
+            ->with('enfermedad:id,nombre,categoria')
+            ->orderByDesc('score')
+            ->limit(6)
+            ->get();
+
+        $compras30 = Venta::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'completada')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+
+        $detalleReciente = DB::table('detalle_ventas')
+            ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
+            ->join('productos', 'detalle_ventas.producto_id', '=', 'productos.id')
+            ->where('ventas.cliente_id', $cliente->id)
+            ->where('ventas.estado', 'completada')
+            ->where('ventas.created_at', '>=', now()->subDays(90))
+            ->selectRaw('productos.nombre as producto, SUM(detalle_ventas.cantidad) as unidades')
+            ->groupBy('productos.nombre')
+            ->orderByDesc('unidades')
+            ->limit(8)
+            ->get();
+
+        return [
+            'cliente' => [
+                'id' => $cliente->id,
+                'dni' => $cliente->dni,
+                'nombre' => $cliente->nombreCompleto(),
+                'acumulado_naturales' => (float) $cliente->acumulado_naturales,
+            ],
+            'patrones' => [
+                'frecuencia_30d' => $compras30,
+                'productos_frecuentes_90d' => $detalleReciente,
+            ],
+            'enfermedades_inferidas' => $perfil->map(function ($fila) {
+                return [
+                    'enfermedad_id' => $fila->enfermedad_id,
+                    'nombre' => $fila->enfermedad->nombre ?? ('#'.$fila->enfermedad_id),
+                    'categoria' => $fila->enfermedad->categoria,
+                    'score_pct' => round(((float) $fila->score) * 100, 2),
+                    'evidencias' => (int) $fila->evidencia_count,
+                ];
+            })->values()->all(),
+            'recomendaciones' => [
+                'perfil_filas' => $reco['perfil_filas'] ?? 0,
+                'items' => $reco['items'] ?? [],
+                'meta' => $reco['meta'] ?? [],
+            ],
+        ];
     }
 
     private function verificarConexion(): bool

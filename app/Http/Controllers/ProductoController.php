@@ -5,9 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\CloudinaryUploader;
+use App\Exports\ProductosExport;
+use App\Imports\ProductosImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductoController extends Controller
 {
+    public function __construct(private readonly CloudinaryUploader $uploader)
+    {
+    }
     public function index(Request $request)
     {
         $query = Producto::with('sucursal')
@@ -32,15 +39,16 @@ class ProductoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'stock_minimo' => 'required|integer|min:0',
-            'tipo' => 'required|in:natural,cordial',
-            'frecuente' => 'boolean',
-            'sucursal_id' => 'nullable|exists:sucursales,id',
-            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nombre'        => 'required|string|max:255',
+            'descripcion'   => 'nullable|string',
+            'precio'        => 'required|numeric|min:0',
+            'stock'         => 'required|integer|min:0',
+            'stock_minimo'  => 'required|integer|min:0',
+            'tipo'          => 'required|in:natural,cordial',
+            'frecuente'     => 'boolean',
+            'sucursal_id'   => 'nullable|exists:sucursales,id',
+            'imagen'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'codigo_barras' => 'nullable|string|max:50|unique:productos,codigo_barras',
         ]);
         $data['activo'] = true;
         $data['frecuente'] = $request->boolean('frecuente');
@@ -50,7 +58,7 @@ class ProductoController extends Controller
         }
 
         if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+            $data['imagen'] = $this->uploader->upload($request->file('imagen'));
         }
 
         Producto::create($data);
@@ -71,25 +79,22 @@ class ProductoController extends Controller
     public function update(Request $request, Producto $producto)
     {
         $data = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'stock_minimo' => 'required|integer|min:0',
-            'tipo' => 'required|in:natural,cordial',
-            'frecuente' => 'boolean',
-            'activo' => 'boolean',
-            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nombre'        => 'required|string|max:255',
+            'descripcion'   => 'nullable|string',
+            'precio'        => 'required|numeric|min:0',
+            'stock'         => 'required|integer|min:0',
+            'stock_minimo'  => 'required|integer|min:0',
+            'tipo'          => 'required|in:natural,cordial',
+            'frecuente'     => 'boolean',
+            'activo'        => 'boolean',
+            'imagen'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'codigo_barras' => 'nullable|string|max:50|unique:productos,codigo_barras,' . $producto->id,
         ]);
         $data['frecuente'] = $request->boolean('frecuente');
         $data['activo'] = $request->boolean('activo');
 
         if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+            $data['imagen'] = $this->uploader->upload($request->file('imagen'), $producto->imagen);
         }
 
         $producto->update($data);
@@ -129,6 +134,41 @@ class ProductoController extends Controller
             return response()->json(['found' => true, 'producto' => $producto]);
         }
 
-        return response()->json(['found' => false, 'message' => 'Producto no encontrado con ese código']);
+return response()->json(['found' => false, 'message' => 'Producto no encontrado con ese código']);
+    }
+
+    public function exportar()
+    {
+        return Excel::download(new ProductosExport(), 'productos_naturacor.xlsx');
+    }
+
+    public function plantilla()
+    {
+        $headers = [
+            'Nombre', 'Tipo', 'Descripción', 'Precio',
+            'Stock', 'Stock mínimo', 'Sucursal', 'Frecuente (sí/no)', 'Código de barras'
+        ];
+        return Excel::download(new class($headers) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
+            public function __construct(private array $h) {}
+            public function headings(): array { return $this->h; }
+            public function array(): array { return [['Ejemplo Producto', 'natural', 'Descripción opcional', '10.00', '50', '5', '', 'no', '']]; }
+        }, 'plantilla_productos.xlsx');
+    }
+
+    public function importar(Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        $import = new ProductosImport();
+        Excel::import($import, $request->file('archivo'));
+
+        if (!empty($import->errores)) {
+            $msg = 'Importación con errores: ' . implode(' | ', $import->errores);
+            return redirect()->route('productos.index')->with('error', $msg);
+        }
+
+        return redirect()->route('productos.index')->with('success', 'Productos importados correctamente.');
     }
 }

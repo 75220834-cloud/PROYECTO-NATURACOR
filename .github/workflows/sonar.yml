@@ -1,0 +1,30 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches:
+      - refactor/calidad-codigo
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=75220834-cloud_PROYECTO-NATURACOR
+            -Dsonar.organization=italo-reyes
+            -Dsonar.sources=app,routes,resources
+            -Dsonar.exclusions=vendor/**,node_modules/**,public/**,storage/**
+            -Dsonar.php.version=8.2

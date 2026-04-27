@@ -24,7 +24,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=75220834-cloud_PROYECTO-NATURACOR
-            -Dsonar.organization=italo-reyes
+            -Dsonar.organization=75220834-cloud
             -Dsonar.sources=app,routes,resources
             -Dsonar.exclusions=vendor/**,node_modules/**,public/**,storage/**
             -Dsonar.php.version=8.2

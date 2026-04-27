@@ -23,8 +23,12 @@ class ProductoController extends Controller
         if ($request->search) {
             $query->where('nombre', 'like', "%{$request->search}%");
         }
-        if ($request->tipo) $query->where('tipo', $request->tipo);
-        if ($request->stock_bajo) $query->whereColumn('stock', '<=', 'stock_minimo');
+        if ($request->tipo) {
+            $query->where('tipo', $request->tipo);
+        }
+        if ($request->stock_bajo) {
+            $query->whereColumn('stock', '<=', 'stock_minimo');
+        }
 
         $productos = $query->orderBy('nombre')->paginate(20);
         return view('productos.index', compact('productos'));

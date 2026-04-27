@@ -250,9 +250,15 @@ class VentaController extends Controller
         $query = Venta::with(['cliente', 'empleado', 'sucursal'])
             ->when(auth()->user()->sucursal_id, fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
 
-        if ($request->fecha_desde) $query->whereDate('created_at', '>=', $request->fecha_desde);
-        if ($request->fecha_hasta) $query->whereDate('created_at', '<=', $request->fecha_hasta);
-        if ($request->metodo_pago) $query->where('metodo_pago', $request->metodo_pago);
+        if ($request->fecha_desde) {
+            $query->whereDate('created_at', '>=', $request->fecha_desde);
+        }
+        if ($request->fecha_hasta) {
+            $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        }
+        if ($request->metodo_pago) {
+            $query->where('metodo_pago', $request->metodo_pago);
+        }
 
         $ventas = $query->latest()->paginate(20);
         return view('ventas.index', compact('ventas'));

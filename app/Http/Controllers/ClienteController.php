@@ -44,7 +44,9 @@ class ClienteController extends Controller
             'telefono' => 'nullable|string|max:20',
         ]);
         $cliente = Cliente::create($data);
-        if ($request->expectsJson()) return response()->json($cliente);
+        if ($request->expectsJson()) {
+            return response()->json($cliente);
+        }
         return redirect()->route('clientes.show', $cliente)->with('success', 'Cliente registrado.');
     }
 
@@ -79,14 +81,18 @@ class ClienteController extends Controller
     public function buscarDni(Request $request)
     {
         $cliente = Cliente::where('dni', $request->dni)->first();
-        if ($cliente) return response()->json(['found' => true, 'cliente' => $cliente]);
+        if ($cliente) {
+            return response()->json(['found' => true, 'cliente' => $cliente]);
+        }
         return response()->json(['found' => false]);
     }
     // Autocompletado para POS (búsqueda por DNI o nombre)
     public function autocompletar(Request $request)
     {
         $q = trim($request->get('q', ''));
-        if (strlen($q) < 2) return response()->json([]);
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
 
         $clientes = Cliente::where('dni', 'like', "%{$q}%")
             ->orWhere('nombre', 'like', "%{$q}%")

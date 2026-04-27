@@ -28,7 +28,9 @@ class CajaController extends Controller
         $request->validate(['monto_inicial' => 'required|numeric|min:0']);
 
         $yaAbierta = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->exists();
-        if ($yaAbierta) return back()->with('error', 'Ya tienes una caja abierta.');
+        if ($yaAbierta) {
+            return back()->with('error', 'Ya tienes una caja abierta.');
+        }
 
         CajaSesion::create([
             'user_id' => auth()->id(),

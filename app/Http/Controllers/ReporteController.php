@@ -30,11 +30,21 @@ class ReporteController extends Controller
         if (!auth()->user()->isAdmin()) {
             $query->where('sucursal_id', auth()->user()->sucursal_id);
         }
-        if ($request->fecha_desde) $query->whereDate('created_at', '>=', $request->fecha_desde);
-        if ($request->fecha_hasta) $query->whereDate('created_at', '<=', $request->fecha_hasta);
-        if ($request->sucursal_id) $query->where('sucursal_id', $request->sucursal_id);
-        if ($request->user_id) $query->where('user_id', $request->user_id);
-        if ($request->metodo_pago) $query->where('metodo_pago', $request->metodo_pago);
+        if ($request->fecha_desde) {
+            $query->whereDate('created_at', '>=', $request->fecha_desde);
+        }
+        if ($request->fecha_hasta) {
+            $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        }
+        if ($request->sucursal_id) {
+            $query->where('sucursal_id', $request->sucursal_id);
+        }
+        if ($request->user_id) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->metodo_pago) {
+            $query->where('metodo_pago', $request->metodo_pago);
+        }
 
         if ($request->producto_id) {
             $query->whereHas('detalles', fn($q) => $q->where('producto_id', $request->producto_id));
@@ -57,12 +67,18 @@ class ReporteController extends Controller
         if (!auth()->user()->isAdmin()) {
             $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
         }
-        if ($request->fecha_desde) $egresosQuery->whereDate('created_at', '>=', $request->fecha_desde);
-        if ($request->fecha_hasta) $egresosQuery->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->fecha_desde) {
+            $egresosQuery->whereDate('created_at', '>=', $request->fecha_desde);
+        }
+        if ($request->fecha_hasta) {
+            $egresosQuery->whereDate('created_at', '<=', $request->fecha_hasta);
+        }
         if ($request->sucursal_id) {
             $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', $request->sucursal_id));
         }
-        if ($request->user_id) $egresosQuery->where('user_id', $request->user_id);
+        if ($request->user_id) {
+            $egresosQuery->where('user_id', $request->user_id);
+        }
 
         $egresos = $egresosQuery->latest()->get();
         $totalEgresos = $egresos->sum('monto');

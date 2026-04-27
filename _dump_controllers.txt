@@ -1,0 +1,1595 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\CajaSesion;
+use App\Models\CajaMovimiento;
+use App\Models\Venta;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class CajaController extends Controller
+{
+    public function index()
+    {
+        $sucursalId = auth()->user()->sucursal_id;
+        $sesionActiva = CajaSesion::where('estado', 'abierta')
+            ->where('user_id', auth()->id())
+            ->with(['movimientos', 'ventas'])
+            ->first();
+        $sesionesAnteriores = CajaSesion::where('user_id', auth()->id())
+            ->where('estado', 'cerrada')
+            ->latest()->limit(10)->get();
+        return view('caja.index', compact('sesionActiva', 'sesionesAnteriores'));
+    }
+
+    public function abrir(Request $request)
+    {
+        $request->validate(['monto_inicial' => 'required|numeric|min:0']);
+
+        $yaAbierta = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->exists();
+        if ($yaAbierta) return back()->with('error', 'Ya tienes una caja abierta.');
+
+        CajaSesion::create([
+            'user_id' => auth()->id(),
+            'sucursal_id' => auth()->user()->sucursal_id ?? 1,
+            'monto_inicial' => $request->monto_inicial,
+            'apertura_at' => now(),
+        ]);
+
+        return back()->with('success', 'Caja abierta correctamente.');
+    }
+
+    public function movimiento(Request $request)
+    {
+        $request->validate([
+            'tipo' => 'required|in:ingreso,egreso',
+            'monto' => 'required|numeric|min:0.01',
+            'descripcion' => 'required|string|max:255',
+            'metodo_pago' => 'required|string',
+        ]);
+
+        $sesion = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->firstOrFail();
+
+        CajaMovimiento::create([
+            'caja_sesion_id' => $sesion->id,
+            'user_id' => auth()->id(),
+            'tipo' => $request->tipo,
+            'monto' => $request->monto,
+            'descripcion' => $request->descripcion,
+            'metodo_pago' => $request->metodo_pago,
+        ]);
+
+        // Actualizar totales de la sesión
+        if ($request->tipo === 'ingreso') {
+            $sesion->increment('total_esperado', $request->monto);
+            $campo = match($request->metodo_pago) {
+                'yape' => 'total_yape', 'plin' => 'total_plin',
+                'efectivo' => 'total_efectivo', default => 'total_otros',
+            };
+            $sesion->increment($campo, $request->monto);
+        } else {
+            $sesion->decrement('total_esperado', $request->monto);
+        }
+
+        return back()->with('success', 'Movimiento registrado.');
+    }
+
+    public function cerrar(Request $request)
+    {
+        $request->validate(['monto_real' => 'required|numeric|min:0']);
+
+        $sesion = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->firstOrFail();
+        $sesion->monto_real_cierre = $request->monto_real;
+        $sesion->diferencia = $request->monto_real - $sesion->total_esperado;
+        $sesion->cierre_at = now();
+        $sesion->estado = 'cerrada';
+        $sesion->notas_cierre = $request->notas;
+        $sesion->save();
+
+        return redirect()->route('caja.index')->with('success', "Caja cerrada. Diferencia: S/" . number_format($sesion->diferencia, 2));
+    }
+
+    public function show(CajaSesion $cajaSesion)
+    {
+        $cajaSesion->load(['movimientos', 'ventas.detalles', 'empleado']);
+        return view('caja.show', compact('cajaSesion'));
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Cliente;
+use App\Models\Venta;
+use App\Services\Recommendation\PerfilSaludService;
+use App\Services\Recommendation\RecomendacionEngine;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class ClienteController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Cliente::withCount('ventas')
+            ->withSum('ventas', 'total')
+            ->addSelect([
+                // Total gastado en productos naturales (detalles de venta)
+                'total_productos' => \App\Models\DetalleVenta::selectRaw('COALESCE(SUM(detalle_ventas.subtotal), 0)')
+                    ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
+                    ->whereColumn('ventas.cliente_id', 'clientes.id')
+                    ->where('ventas.estado', 'completada'),
+            ]);
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('dni', 'like', "%{$request->search}%")
+                  ->orWhere('nombre', 'like', "%{$request->search}%")
+                  ->orWhere('apellido', 'like', "%{$request->search}%");
+            });
+        }
+        $clientes = $query->orderBy('nombre')->paginate(20);
+        return view('clientes.index', compact('clientes'));
+    }
+
+    public function create() { return view('clientes.create'); }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'dni' => 'required|string|max:20|unique:clientes',
+            'nombre' => 'required|string|max:100',
+            'apellido' => 'nullable|string|max:100',
+            'telefono' => 'nullable|string|max:20',
+        ]);
+        $cliente = Cliente::create($data);
+        if ($request->expectsJson()) return response()->json($cliente);
+        return redirect()->route('clientes.show', $cliente)->with('success', 'Cliente registrado.');
+    }
+
+    public function show(Cliente $cliente)
+    {
+        $cliente->load(['ventas.detalles', 'canjes']);
+        $totalCompras = $cliente->ventas()->where('estado', 'completada')->sum('total');
+        $canjesPendientes = $cliente->canjes()->where('created_at', '>=', now()->subDays(30))->count();
+        return view('clientes.show', compact('cliente', 'totalCompras', 'canjesPendientes'));
+    }
+
+    public function edit(Cliente $cliente) { return view('clientes.edit', compact('cliente')); }
+
+    public function update(Request $request, Cliente $cliente)
+    {
+        $data = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'apellido' => 'nullable|string|max:100',
+            'telefono' => 'nullable|string|max:20',
+        ]);
+        $cliente->update($data);
+        return redirect()->route('clientes.show', $cliente)->with('success', 'Cliente actualizado.');
+    }
+
+    public function destroy(Cliente $cliente)
+    {
+        $cliente->delete();
+        return redirect()->route('clientes.index')->with('success', 'Cliente eliminado.');
+    }
+
+    // Búsqueda AJAX por DNI
+    public function buscarDni(Request $request)
+    {
+        $cliente = Cliente::where('dni', $request->dni)->first();
+        if ($cliente) return response()->json(['found' => true, 'cliente' => $cliente]);
+        return response()->json(['found' => false]);
+    }
+    // Autocompletado para POS (búsqueda por DNI o nombre)
+    public function autocompletar(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+        if (strlen($q) < 2) return response()->json([]);
+
+        $clientes = Cliente::where('dni', 'like', "%{$q}%")
+            ->orWhere('nombre', 'like', "%{$q}%")
+            ->orWhere('apellido', 'like', "%{$q}%")
+            ->orderBy('nombre')
+            ->limit(6)
+            ->get(['id', 'dni', 'nombre', 'apellido', 'acumulado_naturales']);
+
+        return response()->json($clientes->map(fn($c) => [
+            'id'       => $c->id,
+            'dni'      => $c->dni,
+            'nombre'   => $c->nombreCompleto(),
+            'acumulado'=> (float) $c->acumulado_naturales,
+        ]));
+    }
+    public function padecimientos(Cliente $cliente)
+    {
+        $padecimientos = $cliente->padecimientos()
+            ->with('enfermedad:id,nombre,categoria')
+            ->get()
+            ->map(fn($p) => [
+                'id'     => $p->enfermedad->id,
+                'nombre' => $p->enfermedad->nombre,
+            ]);
+
+        $enfermedades = \App\Models\Enfermedad::where('activa', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'categoria']);
+
+        return response()->json([
+            'padecimientos' => $padecimientos,
+            'enfermedades'  => $enfermedades,
+        ]);
+    }
+
+    public function guardarPadecimientos(
+        Request $request,
+        Cliente $cliente,
+        PerfilSaludService $perfilSalud,
+        RecomendacionEngine $engine
+    ) {
+        $request->validate([
+            'enfermedad_ids'   => 'nullable|array',
+            'enfermedad_ids.*' => 'exists:enfermedades,id',
+        ]);
+
+        $ids = $request->enfermedad_ids ?? [];
+
+        // Sincronizar: borrar los que no están y agregar los nuevos
+        \App\Models\ClientePadecimiento::where('cliente_id', $cliente->id)
+            ->whereNotIn('enfermedad_id', $ids)
+            ->delete();
+
+        foreach ($ids as $enfermedadId) {
+            \App\Models\ClientePadecimiento::firstOrCreate([
+                'cliente_id'    => $cliente->id,
+                'enfermedad_id' => $enfermedadId,
+            ], [
+                'registrado_por' => auth()->id(),
+            ]);
+        }
+
+        // [BUG 4 FIX] Invalidar caché y recomputar perfil tras cambio de padecimientos.
+        // Sin esto, el JSON de recomendaciones quedaba obsoleto hasta REC_CACHE_MINUTOS
+        // (10 min default) para cualquier consumidor que no enviara ?refresh=1.
+        // Errores aquí no deben tumbar la respuesta al cliente: degradación silenciosa
+        // y log para diagnóstico.
+        try {
+            $perfilSalud->reconstruirPerfil($cliente->id);
+            $engine->invalidarCacheCliente($cliente->id);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo refrescar caché de recomendaciones tras guardar padecimientos', [
+                'cliente_id' => $cliente->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $padecimientos = $cliente->padecimientos()
+            ->with('enfermedad:id,nombre')
+            ->get()
+            ->map(fn($p) => [
+                'id'     => $p->enfermedad->id,
+                'nombre' => $p->enfermedad->nombre,
+            ]);
+
+        return response()->json(['padecimientos' => $padecimientos]);
+    }
+    public function enfermedades(Cliente $cliente)
+    {
+        $cliente->load('padecimientos.enfermedad');
+        $padecimientos = $cliente->padecimientos->pluck('enfermedad');
+        return view('clientes.enfermedades', compact('cliente', 'padecimientos'));
+    }
+
+    public function enfermedadesStore(Request $request, Cliente $cliente)
+    {
+        $request->validate([
+            'enfermedad_id' => 'required|exists:enfermedades,id',
+        ]);
+
+        $cliente->padecimientos()->updateOrCreate(
+            ['enfermedad_id' => $request->enfermedad_id],
+            ['registrado_por' => auth()->id()]
+        );
+
+        return redirect()->route('clientes.enfermedades', $cliente)
+            ->with('success', 'Enfermedad agregada.');
+    }
+
+    public function enfermedadesDestroy(Cliente $cliente, $enfermedadId)
+    {
+        $cliente->padecimientos()->where('enfermedad_id', $enfermedadId)->delete();
+        return redirect()->route('clientes.enfermedades', $cliente)
+            ->with('success', 'Enfermedad eliminada.');
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Producto;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use App\Services\CloudinaryUploader;
+use App\Exports\ProductosExport;
+use App\Imports\ProductosImport;
+use Maatwebsite\Excel\Facades\Excel;
+
+class ProductoController extends Controller
+{
+    public function __construct(private readonly CloudinaryUploader $uploader)
+    {
+    }
+    public function index(Request $request)
+    {
+        $query = Producto::with('sucursal')
+            ->when(auth()->user()->sucursal_id && !auth()->user()->isAdmin(), fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
+
+        if ($request->search) {
+            $query->where('nombre', 'like', "%{$request->search}%");
+        }
+        if ($request->tipo) $query->where('tipo', $request->tipo);
+        if ($request->stock_bajo) $query->whereColumn('stock', '<=', 'stock_minimo');
+
+        $productos = $query->orderBy('nombre')->paginate(20);
+        return view('productos.index', compact('productos'));
+    }
+
+    public function create()
+    {
+        $sucursales = \App\Models\Sucursal::where('activa', true)->get();
+        return view('productos.create', compact('sucursales'));
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'nombre'        => 'required|string|max:255',
+            'descripcion'   => 'nullable|string',
+            'precio'        => 'required|numeric|min:0',
+            'stock'         => 'required|integer|min:0',
+            'stock_minimo'  => 'required|integer|min:0',
+            'tipo'          => 'required|in:natural,cordial',
+            'frecuente'     => 'boolean',
+            'sucursal_id'   => 'nullable|exists:sucursales,id',
+            'imagen'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'codigo_barras' => 'nullable|string|max:50|unique:productos,codigo_barras',
+        ]);
+        $data['activo'] = true;
+        $data['frecuente'] = $request->boolean('frecuente');
+
+        if (!auth()->user()->isAdmin()) {
+            $data['sucursal_id'] = auth()->user()->sucursal_id;
+        }
+
+        if ($request->hasFile('imagen')) {
+            $data['imagen'] = $this->uploader->upload($request->file('imagen'));
+        }
+
+        Producto::create($data);
+        return redirect()->route('productos.index')->with('success', 'Producto creado correctamente.');
+    }
+
+    public function show(Producto $producto)
+    {
+        return view('productos.show', compact('producto'));
+    }
+
+    public function edit(Producto $producto)
+    {
+        $sucursales = \App\Models\Sucursal::where('activa', true)->get();
+        return view('productos.edit', compact('producto', 'sucursales'));
+    }
+
+    public function update(Request $request, Producto $producto)
+    {
+        $data = $request->validate([
+            'nombre'        => 'required|string|max:255',
+            'descripcion'   => 'nullable|string',
+            'precio'        => 'required|numeric|min:0',
+            'stock'         => 'required|integer|min:0',
+            'stock_minimo'  => 'required|integer|min:0',
+            'tipo'          => 'required|in:natural,cordial',
+            'frecuente'     => 'boolean',
+            'activo'        => 'boolean',
+            'imagen'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'codigo_barras' => 'nullable|string|max:50|unique:productos,codigo_barras,' . $producto->id,
+        ]);
+        $data['frecuente'] = $request->boolean('frecuente');
+        $data['activo'] = $request->boolean('activo');
+
+        if ($request->hasFile('imagen')) {
+            $data['imagen'] = $this->uploader->upload($request->file('imagen'), $producto->imagen);
+        }
+
+        $producto->update($data);
+        return redirect()->route('productos.index')->with('success', 'Producto actualizado.');
+    }
+
+    public function destroy(Producto $producto)
+    {
+        $producto->delete();
+        return redirect()->route('productos.index')->with('success', 'Producto eliminado.');
+    }
+
+    // API para búsqueda AJAX en el POS
+    public function buscar(Request $request)
+    {
+        $productos = Producto::where('activo', true)
+            ->where('nombre', 'like', "%{$request->q}%")
+            ->where('tipo', 'natural')
+            ->limit(10)->get(['id', 'nombre', 'precio', 'stock', 'frecuente']);
+
+        return response()->json($productos);
+    }
+
+    // API para búsqueda por código de barras (escáner USB)
+    public function buscarBarcode(Request $request)
+    {
+        $codigo = $request->get('codigo');
+        if (!$codigo) {
+            return response()->json(['found' => false, 'message' => 'Código no proporcionado']);
+        }
+
+        $producto = Producto::where('activo', true)
+            ->where('codigo_barras', $codigo)
+            ->first(['id', 'nombre', 'precio', 'stock', 'codigo_barras']);
+
+        if ($producto) {
+            return response()->json(['found' => true, 'producto' => $producto]);
+        }
+
+return response()->json(['found' => false, 'message' => 'Producto no encontrado con ese código']);
+    }
+
+    public function exportar()
+    {
+        return Excel::download(new ProductosExport(), 'productos_naturacor.xlsx');
+    }
+
+    public function plantilla()
+    {
+        $headers = [
+            'Nombre', 'Tipo', 'Descripción', 'Precio',
+            'Stock', 'Stock mínimo', 'Sucursal', 'Frecuente (sí/no)', 'Código de barras'
+        ];
+        return Excel::download(new class($headers) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
+            public function __construct(private array $h) {}
+            public function headings(): array { return $this->h; }
+            public function array(): array { return [['Ejemplo Producto', 'natural', 'Descripción opcional', '10.00', '50', '5', '', 'no', '']]; }
+        }, 'plantilla_productos.xlsx');
+    }
+
+    public function importar(Request $request)
+    {
+        $request->validate([
+            'archivo' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        $import = new ProductosImport();
+        Excel::import($import, $request->file('archivo'));
+
+        if (!empty($import->errores)) {
+            $msg = 'Importación con errores: ' . implode(' | ', $import->errores);
+            return redirect()->route('productos.index')->with('error', $msg);
+        }
+
+        return redirect()->route('productos.index')->with('success', 'Productos importados correctamente.');
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Venta;
+use App\Models\DetalleVenta;
+use App\Models\Producto;
+use App\Models\User;
+use App\Models\Sucursal;
+use App\Models\CajaMovimiento;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class ReporteController extends Controller
+{
+    public function index(Request $request)
+    {
+        $sucursales = Sucursal::where('activa', true)->get();
+        $empleados = User::role('empleado')->get();
+        $productos = Producto::orderBy('nombre')->get();
+        return view('reportes.index', compact('sucursales', 'empleados', 'productos'));
+    }
+
+    public function generar(Request $request)
+    {
+        $query = Venta::with(['cliente', 'empleado', 'sucursal', 'detalles', 'cordialVentas'])
+            ->where('estado', 'completada');
+
+        if (!auth()->user()->isAdmin()) {
+            $query->where('sucursal_id', auth()->user()->sucursal_id);
+        }
+        if ($request->fecha_desde) $query->whereDate('created_at', '>=', $request->fecha_desde);
+        if ($request->fecha_hasta) $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->sucursal_id) $query->where('sucursal_id', $request->sucursal_id);
+        if ($request->user_id) $query->where('user_id', $request->user_id);
+        if ($request->metodo_pago) $query->where('metodo_pago', $request->metodo_pago);
+
+        if ($request->producto_id) {
+            $query->whereHas('detalles', fn($q) => $q->where('producto_id', $request->producto_id));
+        }
+
+        $ventas = $query->latest()->get();
+        $totales = [
+            'ventas' => $ventas->count(),
+            'total' => $ventas->sum('total'),
+            'efectivo' => $ventas->where('metodo_pago', 'efectivo')->sum('total'),
+            'yape' => $ventas->where('metodo_pago', 'yape')->sum('total'),
+            'plin' => $ventas->where('metodo_pago', 'plin')->sum('total'),
+            'otros' => $ventas->whereNotIn('metodo_pago', ['efectivo', 'yape', 'plin'])->sum('total'),
+        ];
+
+        // Egresos del mismo período
+        $egresosQuery = CajaMovimiento::with(['empleado', 'cajaSesion'])
+            ->where('tipo', 'egreso');
+
+        if (!auth()->user()->isAdmin()) {
+            $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
+        }
+        if ($request->fecha_desde) $egresosQuery->whereDate('created_at', '>=', $request->fecha_desde);
+        if ($request->fecha_hasta) $egresosQuery->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->sucursal_id) {
+            $egresosQuery->whereHas('cajaSesion', fn($q) => $q->where('sucursal_id', $request->sucursal_id));
+        }
+        if ($request->user_id) $egresosQuery->where('user_id', $request->user_id);
+
+        $egresos = $egresosQuery->latest()->get();
+        $totalEgresos = $egresos->sum('monto');
+        $totales['egresos'] = $totalEgresos;
+        $totales['neto'] = $totales['total'] - $totalEgresos;
+
+        if ($request->exportar === 'pdf') {
+            $pdf = Pdf::loadView('reportes.pdf', compact('ventas', 'totales', 'egresos', 'request'))->setPaper('a4', 'landscape');
+            return $pdf->download('reporte-ventas-' . now()->format('Ymd') . '.pdf');
+        }
+
+        return view('reportes.resultado', compact('ventas', 'totales', 'egresos'));
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Venta;
+use App\Models\DetalleVenta;
+use App\Models\CordialVenta;
+use App\Models\Producto;
+use App\Models\Cliente;
+use App\Models\CajaSesion;
+use App\Services\Fidelizacion\FidelizacionService;
+use App\Services\Recommendation\AbTestingService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class VentaController extends Controller
+{
+    public function __construct(
+        private readonly FidelizacionService $fidelizacionService,
+        private readonly AbTestingService $ab,
+    ) {}
+
+    // POS - Pantalla principal de venta
+    public function pos()
+    {
+        $productos = Producto::where('activo', true)
+            ->orderByDesc('frecuente')
+            ->orderBy('nombre')
+            ->get();
+        $frecuentes = $productos->where('frecuente', true)->values();
+        $cajaActiva = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->first();
+        return view('ventas.pos', compact('productos', 'frecuentes', 'cajaActiva'));
+    }
+
+    // Confirmar venta desde POS
+    public function store(Request $request)
+    {
+        $tieneItems   = $request->filled('items')   && is_array($request->items)   && count($request->items) > 0;
+        $tieneCordial = $request->filled('cordial') && is_array($request->cordial) && count($request->cordial) > 0;
+
+        if (!$tieneItems && !$tieneCordial) {
+            return response()->json(['success' => false, 'message' => 'Agrega al menos un producto al carrito'], 422);
+        }
+
+        $rules = [
+            'metodo_pago' => 'required|string',
+            'cliente_id'  => 'nullable|exists:clientes,id',
+        ];
+        if ($tieneItems) {
+            $rules['items']                  = 'array';
+            $rules['items.*.producto_id']    = 'required|exists:productos,id';
+            $rules['items.*.cantidad']       = 'required|integer|min:1';
+            $rules['items.*.descuento']      = 'nullable|numeric|min:0';
+        }
+
+        $request->validate($rules);
+
+        DB::beginTransaction();
+        try {
+            $cliente    = $request->cliente_id ? Cliente::find($request->cliente_id) : null;
+            $igvFactor  = config('naturacor.igv_porcentaje', 18) / (100 + config('naturacor.igv_porcentaje', 18));
+            $sucursalId = auth()->user()->sucursal_id ?? 1;
+            $cajaActiva = CajaSesion::where('estado', 'abierta')->where('user_id', auth()->id())->first();
+
+            $subtotal      = 0;
+            $descuentoTotal = 0;
+            $lineas        = [];
+
+            if ($tieneItems) {
+                foreach ($request->items as $item) {
+                    $producto = Producto::lockForUpdate()->findOrFail($item['producto_id']);
+                    if ($producto->stock < $item['cantidad']) {
+                        throw new \Exception("Stock insuficiente para {$producto->nombre}");
+                    }
+                    $descuento   = $item['descuento'] ?? 0;
+                    $precioFinal = ($producto->precio - $descuento) * $item['cantidad'];
+                    $lineas[]    = ['producto' => $producto, 'cantidad' => $item['cantidad'], 'descuento' => $descuento, 'subtotal' => $precioFinal];
+                    $subtotal      += $precioFinal;
+                    $descuentoTotal += $descuento * $item['cantidad'];
+                }
+            }
+
+            $igv   = round($subtotal * $igvFactor, 2);
+
+            // Calcular total de cordiales (no llevan IGV)
+            $totalCordiales = 0;
+            if ($tieneCordial) {
+                foreach ($request->cordial as $c) {
+                    $esInvitado = ($c['tipo'] === 'invitado');
+                    $precioCordial = $esInvitado ? 0 : (CordialVenta::$precios[$c['tipo']] ?? 0);
+                    $totalCordiales += $precioCordial * ($c['cantidad'] ?? 1);
+                }
+            }
+
+            $total = $subtotal + $totalCordiales;
+
+            $venta                    = new Venta();
+            $venta->cliente_id        = $cliente?->id;
+            $venta->user_id           = auth()->id();
+            $venta->sucursal_id       = $sucursalId;
+            $venta->subtotal          = round($subtotal - $igv, 2);
+            $venta->igv               = $igv;
+            $venta->total             = $total;
+            $venta->descuento_total   = $descuentoTotal;
+            $venta->metodo_pago       = $request->metodo_pago;
+            $venta->metodos_pago_detalle = $request->metodos_pago_detalle ?? null;
+            $venta->caja_sesion_id    = $cajaActiva?->id;
+            $venta->estado            = 'completada';
+            // [BLOQUE 4] Estampamos el grupo A/B del cliente al momento de la
+            // venta. Si el cliente no está identificado (venta walk-in),
+            // queda en 'sin_ab' porque no podríamos atribuirla al experimento.
+            $venta->grupo_ab          = $this->ab->asignarGrupo($cliente?->id);
+            $venta->save();
+
+            $venta->numero_boleta = $venta->generarNumeroBoleta();
+            $venta->save();
+
+            foreach ($lineas as $linea) {
+                DetalleVenta::create([
+                    'venta_id'        => $venta->id,
+                    'producto_id'     => $linea['producto']->id,
+                    'nombre_producto' => $linea['producto']->nombre,
+                    'precio_unitario' => $linea['producto']->precio,
+                    'cantidad'        => $linea['cantidad'],
+                    'descuento'       => $linea['descuento'],
+                    'subtotal'        => $linea['subtotal'],
+                ]);
+                $linea['producto']->decrement('stock', $linea['cantidad']);
+            }
+
+            // Registrar cordiales y aplicar promo litro puro
+            $promosGeneradas = [];
+            if ($request->has('cordial')) {
+                foreach ($request->cordial as $c) {
+                    CordialVenta::create([
+                        'venta_id'          => $venta->id,
+                        'tipo'              => $c['tipo'],
+                        'precio'            => CordialVenta::$precios[$c['tipo']] ?? 0,
+                        'cantidad'          => $c['cantidad'] ?? 1,
+                        'es_invitado'       => ($c['tipo'] === 'invitado'),
+                        'empleado_invita_id'=> $c['empleado_invita_id'] ?? auth()->id(),
+                        'motivo_invitado'   => $c['motivo_invitado'] ?? null,
+                    ]);
+
+                    // Promo: litro puro S/80 → 1 toma llevar_s5 gratis por unidad
+                    if ($c['tipo'] === 'litro_puro_s80') {
+                        $cantidad = $c['cantidad'] ?? 1;
+                        for ($i = 0; $i < $cantidad; $i++) {
+                            CordialVenta::create([
+                                'venta_id'          => $venta->id,
+                                'tipo'              => 'llevar_s5',
+                                'precio'            => 0,
+                                'cantidad'          => 1,
+                                'es_invitado'       => true,
+                                'empleado_invita_id'=> auth()->id(),
+                                'motivo_invitado'   => 'Promo: 1 toma gratis por litro puro S/80',
+                            ]);
+                        }
+                        $promosGeneradas[] = '1 toma llevar S/5 gratis por litro puro';
+                    }
+                }
+            }
+
+            // Fidelización 2026
+            $canjesGenerados = $this->procesarFidelizacion($venta, $cliente, $lineas, $request);
+
+            if ($cajaActiva) {
+                $this->actualizarCaja($cajaActiva, $venta);
+            }
+
+            \App\Models\LogAuditoria::create([
+                'user_id'        => auth()->id(),
+                'accion'         => 'venta.creada',
+                'tabla_afectada' => 'ventas',
+                'registro_id'    => $venta->id,
+                'datos_nuevos'   => ['total' => $venta->total, 'items' => count($lineas)],
+                'ip'             => request()->ip(),
+                'sucursal_id'    => $sucursalId,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success'         => true,
+                'venta_id'        => $venta->id,
+                'numero_boleta'   => $venta->numero_boleta,
+                'premio_generado' => count($canjesGenerados) > 0,
+                'canjes'          => $canjesGenerados,
+                'promos'          => $promosGeneradas,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Fidelización permanente:
+     * - acumulado histórico sin reset
+     * - premios emitidos por hitos: floor(acumulado / umbral)
+     */
+    private function procesarFidelizacion(Venta $venta, ?Cliente $cliente, array $lineas, Request $request): array
+    {
+        if (!$cliente) return [];
+
+        $hoy    = now()->format('Y-m-d');
+        $inicio = config('naturacor.fidelizacion_inicio', '2026-01-01');
+        $fin    = config('naturacor.fidelizacion_fin',    '2026-12-31');
+        if ($hoy < $inicio || $hoy > $fin) return [];
+
+        // 1) Sumar los que pasaron como productos regulares (naturales o cordiales)
+        $montoProductos = collect($lineas)
+            ->filter(fn($l) => in_array($l['producto']->tipo, ['natural', 'cordial']))
+            ->sum('subtotal');
+
+        // 2) Sumar cordiales rápidos (excluyendo invitados/gratis)
+        $montoCordiales = 0;
+        if ($request->has('cordial')) {
+            foreach ($request->cordial as $c) {
+                if ($c['tipo'] !== 'invitado') {
+                    $precio = CordialVenta::$precios[$c['tipo']] ?? 0;
+                    $montoCordiales += $precio * ($c['cantidad'] ?? 1);
+                }
+            }
+        }
+
+        $montoTotal = $montoProductos + $montoCordiales;
+        return $this->fidelizacionService->registrarAcumuladoYGenerarCanjes(
+            $venta,
+            $cliente,
+            (float) $montoTotal
+        );
+    }
+
+    private function actualizarCaja(CajaSesion $caja, Venta $venta)
+    {
+        $campo = match($venta->metodo_pago) {
+            'yape'    => 'total_yape',
+            'plin'    => 'total_plin',
+            'efectivo'=> 'total_efectivo',
+            default   => 'total_otros',
+        };
+        $caja->increment($campo, $venta->total);
+        $caja->increment('total_esperado', $venta->total);
+    }
+
+    public function index(Request $request)
+    {
+        $query = Venta::with(['cliente', 'empleado', 'sucursal'])
+            ->when(auth()->user()->sucursal_id, fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id));
+
+        if ($request->fecha_desde) $query->whereDate('created_at', '>=', $request->fecha_desde);
+        if ($request->fecha_hasta) $query->whereDate('created_at', '<=', $request->fecha_hasta);
+        if ($request->metodo_pago) $query->where('metodo_pago', $request->metodo_pago);
+
+        $ventas = $query->latest()->paginate(20);
+        return view('ventas.index', compact('ventas'));
+    }
+
+    public function show(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto', 'cordialVentas']);
+        return view('ventas.show', compact('venta'));
+    }
+
+    public function create() { return redirect()->route('ventas.pos'); }
+    public function edit(Venta $venta) { return redirect()->route('ventas.show', $venta); }
+    public function update(Request $request, Venta $venta) { abort(405); }
+    public function destroy(Venta $venta)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Solo el administrador puede anular ventas.');
+        }
+        $venta->update(['estado' => 'anulada']);
+        return back()->with('success', 'Venta anulada correctamente.');
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Venta;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
+
+class BoletaController extends Controller
+{
+    public function show(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto', 'cordialVentas']);
+        return view('boletas.show', compact('venta'));
+    }
+
+    public function pdf(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto', 'cordialVentas']);
+        $pdf = Pdf::loadView('boletas.pdf', compact('venta'))
+            ->setPaper([0, 0, 226.77, 566.93]); // 80mm ticket
+        return $pdf->download("boleta-{$venta->numero_boleta}.pdf");
+    }
+
+    /**
+     * Vista para impresión en impresora térmica (58mm / 80mm).
+     */
+    public function ticket(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto', 'cordialVentas']);
+        return view('boletas.ticket', compact('venta'));
+    }
+
+    public function whatsapp(Venta $venta)
+    {
+        $venta->load(['cliente', 'empleado', 'sucursal', 'detalles.producto']);
+
+        // BUG #10 FIX: Validar que el cliente tenga teléfono
+        $telefono = $venta->cliente?->telefono;
+        if (empty($telefono)) {
+            return back()->with('error', 'El cliente no tiene número de teléfono registrado para enviar por WhatsApp.');
+        }
+
+        $texto = $this->generarTextoWhatsapp($venta);
+        // Asegurar formato peruano +51
+        $telefono = preg_replace('/[^0-9]/', '', $telefono);
+        if (strlen($telefono) === 9) {
+            $telefono = '51' . $telefono;
+        }
+        $url = "https://wa.me/{$telefono}?text=" . urlencode($texto);
+        return redirect($url);
+    }
+
+    private function generarTextoWhatsapp(Venta $venta): string
+    {
+        $lineas = ["🌿 *NATURACOR* - Boleta de Venta"];
+        $lineas[] = "N° {$venta->numero_boleta}";
+        $lineas[] = "Fecha: " . $venta->created_at->format('d/m/Y H:i');
+        $lineas[] = "Cliente: " . ($venta->cliente ? $venta->cliente->nombreCompleto() : 'Sin registro');
+        $lineas[] = "─────────────────────";
+        foreach ($venta->detalles as $det) {
+            $lineas[] = "• {$det->nombre_producto} x{$det->cantidad} = S/{$det->subtotal}";
+        }
+        $lineas[] = "─────────────────────";
+        $lineas[] = "Subtotal: S/" . number_format($venta->subtotal, 2);
+        $lineas[] = "IGV (18%): S/" . number_format($venta->igv, 2);
+        $lineas[] = "*TOTAL: S/" . number_format($venta->total, 2) . "*";
+        $lineas[] = "Pago: " . strtoupper($venta->metodo_pago);
+        $lineas[] = "Vendedor: " . $venta->empleado->name;
+        $lineas[] = "\n¡Gracias por su preferencia! 🌱";
+        return implode("\n", $lineas);
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\CordialVenta;
+use App\Models\Venta;
+use App\Models\CajaSesion;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class CordialController extends Controller
+{
+    /**
+     * Lista de ventas de cordiales.
+     */
+    public function index(Request $request)
+    {
+        $query = CordialVenta::with(['venta.cliente', 'venta.empleado'])
+            ->when(auth()->user()->sucursal_id, fn($q, $sid) =>
+                $q->whereHas('venta', fn($sub) => $sub->where('sucursal_id', $sid))
+            );
+
+        if ($request->fecha) {
+            $query->whereDate('created_at', $request->fecha);
+        }
+
+        $cordiales  = $query->latest()->paginate(20);
+        $tipos      = CordialVenta::$labels;
+        $precios    = CordialVenta::$precios;
+
+        return view('cordiales.index', compact('cordiales', 'tipos', 'precios'));
+    }
+
+    /**
+     * Formulario para registrar venta directa de cordial.
+     */
+    public function create()
+    {
+        $tipos   = CordialVenta::$labels;
+        $precios = CordialVenta::$precios;
+        return view('cordiales.create', compact('tipos', 'precios'));
+    }
+
+    /**
+     * Registrar una venta de cordial de forma directa (sin producto del inventario).
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'tipo'               => 'required|in:' . implode(',', array_keys(CordialVenta::$precios)),
+            'cantidad'           => 'required|integer|min:1|max:20',
+            'es_invitado'        => 'nullable|boolean',
+            'motivo_invitado'    => 'nullable|string|max:255',
+            'metodo_pago'        => 'required|string',
+            'cliente_id'         => 'nullable|exists:clientes,id',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $esInvitado  = (bool) ($data['es_invitado'] ?? false);
+            $precio      = $esInvitado ? 0 : (CordialVenta::$precios[$data['tipo']] ?? 0);
+            $sucursalId  = auth()->user()->sucursal_id ?? 1;
+            $cajaActiva  = CajaSesion::where('estado', 'abierta')
+                ->where('user_id', auth()->id())
+                ->first();
+
+            $clienteId = $data['cliente_id'] ?? null;
+            $cliente   = $clienteId ? \App\Models\Cliente::find($clienteId) : null;
+
+            // Crear venta contenedora
+            $venta = Venta::create([
+                'cliente_id'     => $clienteId,
+                'user_id'        => auth()->id(),
+                'sucursal_id'    => $sucursalId,
+                'subtotal'       => $precio * $data['cantidad'],
+                'igv'            => 0,
+                'total'          => $precio * $data['cantidad'],
+                'descuento_total'=> 0,
+                'metodo_pago'    => $data['metodo_pago'],
+                'estado'         => 'completada',
+                'caja_sesion_id' => $cajaActiva?->id,
+            ]);
+            $venta->numero_boleta = $venta->generarNumeroBoleta();
+            $venta->save();
+
+            // Registrar detalle de cordial
+            CordialVenta::create([
+                'venta_id'          => $venta->id,
+                'tipo'              => $data['tipo'],
+                'precio'            => $precio,
+                'cantidad'          => $data['cantidad'],
+                'es_invitado'       => $esInvitado,
+                'empleado_invita_id'=> auth()->id(),
+                'motivo_invitado'   => $data['motivo_invitado'] ?? null,
+            ]);
+
+            // Promo: litro puro S/80 → 1 toma llevar_s5 gratis por unidad comprada
+            if (!$esInvitado && $data['tipo'] === 'litro_puro_s80') {
+                for ($i = 0; $i < $data['cantidad']; $i++) {
+                    CordialVenta::create([
+                        'venta_id'          => $venta->id,
+                        'tipo'              => 'llevar_s5',
+                        'precio'            => 0,
+                        'cantidad'          => 1,
+                        'es_invitado'       => true,
+                        'empleado_invita_id'=> auth()->id(),
+                        'motivo_invitado'   => 'Promo: 1 toma gratis por litro puro S/80',
+                    ]);
+                }
+            }
+
+
+            // Actualizar caja
+            if ($cajaActiva && $precio > 0) {
+                $campo = match($data['metodo_pago']) {
+                    'yape' => 'total_yape', 'plin' => 'total_plin',
+                    'efectivo' => 'total_efectivo', default => 'total_otros',
+                };
+                $cajaActiva->increment($campo, $precio * $data['cantidad']);
+                $cajaActiva->increment('total_esperado', $precio * $data['cantidad']);
+            }
+
+            DB::commit();
+            return redirect()->route('cordiales.index')
+                ->with('success', 'Venta de cordial registrada correctamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Precios disponibles de cordiales (para uso con AJAX desde el POS).
+     */
+    public function precios()
+    {
+        return response()->json([
+            'precios' => CordialVenta::$precios,
+            'labels'  => CordialVenta::$labels,
+        ]);
+    }
+}
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Cliente;
+use App\Models\ClientePerfilAfinidad;
+use App\Models\DetalleVenta;
+use App\Models\Enfermedad;
+use App\Models\Producto;
+use App\Models\Venta;
+use App\Services\Recommendation\PerfilSaludService;
+use App\Services\Recommendation\RecomendacionEngine;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class IAController extends Controller
+{
+    public function __construct(
+        private readonly PerfilSaludService $perfilSaludService,
+        private readonly RecomendacionEngine $recomendacionEngine
+    ) {}
+
+    public function index()
+    {
+        $analisis = $this->analizarNegocio();
+        $clientes = Cliente::query()
+            ->orderByDesc('updated_at')
+            ->limit(120)
+            ->get(['id', 'dni', 'nombre', 'apellido']);
+
+        $groqKey  = config('naturacor.groq_api_key');
+        $geminiKey = config('naturacor.gemini_api_key');
+        $tieneApiKey = !empty($groqKey) || !empty($geminiKey);
+        $modoOnline  = $tieneApiKey && $this->verificarConexion();
+
+        // Debug: log para verificar detección de API keys
+        Log::info('IA index - API key check', [
+            'groq_key_present'   => !empty($groqKey),
+            'gemini_key_present' => !empty($geminiKey),
+            'tiene_api_key'      => $tieneApiKey,
+            'modo_online'        => $modoOnline,
+        ]);
+
+        return view('ia.index', compact('analisis', 'modoOnline', 'clientes'));
+    }
+
+    public function analizar(Request $request)
+    {
+        $data = $request->validate([
+            'consulta' => 'nullable|string|max:2000',
+            'cliente_id' => 'nullable|exists:clientes,id',
+        ]);
+        $consulta = $data['consulta'] ?? 'Analiza el negocio y dame recomendaciones';
+        $cliente = isset($data['cliente_id']) ? Cliente::find($data['cliente_id']) : null;
+
+        $analisis = $this->analizarNegocio();
+        $contextoCliente = $this->construirContextoCliente($cliente, $request);
+        $contextoIa = $this->formatearContexto($analisis, $contextoCliente);
+        $promptDinamico = $this->construirPromptDinamico($consulta, $contextoIa);
+
+        // 1) Intentar Groq primero
+        $apiKeyGroq = config('naturacor.groq_api_key');
+        if (!empty($apiKeyGroq)) {
+            $respuesta = $this->consultarGroq($consulta, $promptDinamico);
+            if ($respuesta) {
+                return response()->json([
+                    'modo' => 'online',
+                    'resultado' => $respuesta,
+                    'analisis' => $analisis,
+                    'cliente_contexto' => $contextoCliente,
+                ]);
+            }
+        }
+
+        // 2) Intentar Gemini
+        $apiKeyGemini = config('naturacor.gemini_api_key');
+        if (!empty($apiKeyGemini)) {
+            $respuesta = $this->consultarGemini($consulta, $promptDinamico);
+            if ($respuesta) {
+                return response()->json([
+                    'modo' => 'online',
+                    'resultado' => $respuesta,
+                    'analisis' => $analisis,
+                    'cliente_contexto' => $contextoCliente,
+                ]);
+            }
+        }
+
+        // 3) Modo offline
+        $respuestaInteligente = $this->generarRespuestaInteligente($consulta, $analisis, $contextoCliente);
+        return response()->json([
+            'modo'      => 'offline',
+            'resultado' => $respuestaInteligente,
+            'analisis'  => $analisis,
+            'cliente_contexto' => $contextoCliente,
+        ]);
+    }
+
+
+    private function consultarGemini(string $consulta, string $promptDinamico): ?string
+    {
+        try {
+            $apiKey   = config('naturacor.gemini_api_key');
+
+            $systemInstruction = $this->systemPromptBase()."\n\n".$promptDinamico;
+
+            $response = Http::withOptions([
+                'connect_timeout' => 10,
+                'timeout'         => 30,
+                'verify'          => false, // XAMPP/Windows SSL fix
+            ])->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}",
+                [
+                    'system_instruction' => [
+                        'parts' => [['text' => $systemInstruction]]
+                    ],
+                    'contents' => [
+                        ['parts' => [['text' => $consulta]]]
+                    ],
+                    'generationConfig' => [
+                        'maxOutputTokens' => 1500,
+                        'temperature'     => 0.8,
+                    ],
+                ]
+            );
+
+            if ($response->successful()) {
+                return $response->json('candidates.0.content.parts.0.text') ?? null;
+            }
+
+            // Log del error para debug
+            Log::error('Gemini API error', [
+                'status' => $response->status(),
+                'body'   => substr($response->body(), 0, 500),
+            ]);
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error('Gemini exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function consultarGroq(string $consulta, string $promptDinamico): ?string
+    {
+        try {
+            $systemPrompt = $this->systemPromptBase()."\n\n".$promptDinamico;
+
+            $response = Http::withOptions([
+                'connect_timeout' => 10,
+                'timeout'         => 30,
+                'verify'          => false, // XAMPP/Windows SSL fix
+            ])
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . config('naturacor.groq_api_key'),
+                    'Content-Type'  => 'application/json',
+                ])
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model'    => 'llama-3.3-70b-versatile',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user',   'content' => $consulta],
+                    ],
+                    'max_tokens'  => 1500,
+                    'temperature' => 0.8,
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('choices.0.message.content') ?? null;
+            }
+            Log::error('Groq error', [
+                'status' => $response->status(),
+                'body'   => substr($response->body(), 0, 300),
+            ]);
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Groq exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function consultarOpenAI(string $consulta, string $promptDinamico): ?string
+    {
+        try {
+            $response = Http::timeout(15)->withHeaders([
+                'Authorization' => 'Bearer ' . config('naturacor.openai_api_key'),
+                'Content-Type' => 'application/json',
+            ])->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-3.5-turbo',
+                'messages' => [
+                    ['role' => 'system', 'content' => $this->systemPromptBase()."\n\n".$promptDinamico],
+                    ['role' => 'user', 'content' => $consulta],
+                ],
+                'max_tokens' => 600,
+            ]);
+
+            return $response->successful()
+                ? ($response->json('choices.0.message.content') ?? null)
+                : null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private function generarRespuestaInteligente(string $consulta, array $analisis, ?array $contextoCliente): string
+    {
+        $consulta = strtolower($consulta);
+        $kw = fn($words) => collect($words)->some(fn($w) => str_contains($consulta, $w));
+
+        $lineas = ["📊 **Análisis de NATURACOR** — " . now()->format('d/m/Y H:i'), ""];
+
+        if ($contextoCliente) {
+            $lineas[] = "👤 **Cliente analizado:** {$contextoCliente['cliente']['nombre']} (DNI {$contextoCliente['cliente']['dni']})";
+            $lineas[] = "• Frecuencia estimada: {$contextoCliente['patrones']['frecuencia_30d']} compra(s) en 30 días";
+            $lineas[] = "• Acumulado fidelización: S/".number_format((float) $contextoCliente['cliente']['acumulado_naturales'], 2);
+            $lineas[] = "";
+            $lineas[] = "🧠 **Condiciones inferidas por patrón de compra (no diagnóstico):**";
+            if (! empty($contextoCliente['enfermedades_inferidas'])) {
+                foreach ($contextoCliente['enfermedades_inferidas'] as $enf) {
+                    $lineas[] = "• {$enf['nombre']} (score {$enf['score_pct']}%, evidencias: {$enf['evidencias']})";
+                }
+            } else {
+                $lineas[] = "• Aún no hay señales suficientes en el historial.";
+            }
+            $lineas[] = "";
+            $lineas[] = "🌿 **Productos recomendados por motor real:**";
+            if (! empty($contextoCliente['recomendaciones']['items'])) {
+                foreach (array_slice($contextoCliente['recomendaciones']['items'], 0, 6) as $it) {
+                    $lineas[] = "• {$it['producto']['nombre']} — score {$it['score_final']}";
+                }
+            } else {
+                $lineas[] = "• Sin recomendaciones para este cliente en este momento.";
+            }
+            $lineas[] = "";
+        }
+
+        // Respuesta basada en la consulta
+        if ($kw(['vend', 'top', 'popular', 'más'])) {
+            $lineas[] = "🏆 **Productos más vendidos (últimos 7 días):**";
+            if ($analisis['top_productos']->isNotEmpty()) {
+                foreach ($analisis['top_productos'] as $nombre => $total) {
+                    $lineas[] = "  • {$nombre}: {$total} unidades";
+                }
+            } else {
+                $lineas[] = "  Sin ventas registradas esta semana.";
+            }
+        } elseif ($kw(['stock', 'reponer', 'inventario', 'falt'])) {
+            $lineas[] = "⚠️ **Productos que necesitan reposición:**";
+            if ($analisis['stock_critico']->isNotEmpty()) {
+                foreach ($analisis['stock_critico'] as $p) {
+                    $valor = $p->stock == 0 ? "🔴 AGOTADO" : "🟡 Stock: {$p->stock} (mín: {$p->stock_minimo})";
+                    $lineas[] = "  • {$p->nombre}: {$valor}";
+                }
+            } else {
+                $lineas[] = "  ✅ Todos los productos tienen stock suficiente.";
+            }
+        } elseif ($kw(['venta', 'ingreso', 'ganancia', 'dinero', 'recaudado'])) {
+            $lineas[] = "💰 **Resumen financiero:**";
+            $lineas[] = "  • Hoy: S/ " . number_format($analisis['ventas_hoy']['total'], 2) . " ({$analisis['ventas_hoy']['count']} ventas)";
+            $lineas[] = "  • Esta semana: S/ " . number_format($analisis['ventas_semana']['total'], 2) . " ({$analisis['ventas_semana']['count']} ventas)";
+            $lineas[] = "  • Este mes: S/ " . number_format($analisis['ventas_mes']['total'], 2) . " ({$analisis['ventas_mes']['count']} ventas)";
+        } elseif ($kw(['cliente', 'fideliz', 'leal'])) {
+            $lineas[] = "👥 **Análisis de clientes:**";
+            $lineas[] = "  • Total clientes registrados: {$analisis['clientes_total']}";
+            $lineas[] = "  • Clientes frecuentes: {$analisis['clientes_frecuentes']}";
+            if ($analisis['top_cliente']) {
+                $lineas[] = "  • Mejor cliente: {$analisis['top_cliente']->nombre} (S/ " . number_format($analisis['top_cliente']->total_gastado, 2) . ")";
+            }
+        } else {
+            // Resumen general
+            $lineas[] = "💰 **Rendimiento de ventas:**";
+            $lineas[] = "  • Hoy: S/ " . number_format($analisis['ventas_hoy']['total'], 2) . " ({$analisis['ventas_hoy']['count']} ventas)";
+            $lineas[] = "  • Esta semana: S/ " . number_format($analisis['ventas_semana']['total'], 2);
+            $lineas[] = "  • Este mes: S/ " . number_format($analisis['ventas_mes']['total'], 2);
+            $lineas[] = "";
+            $lineas[] = "📦 **Inventario:**";
+            $lineas[] = "  • Productos activos: {$analisis['productos_activos']}";
+            $lineas[] = "  • Con stock bajo: {$analisis['stock_critico']->count()}";
+            if ($analisis['stock_critico']->isNotEmpty()) {
+                $lineas[] = "  ⚠️ Urgente reponer: " . $analisis['stock_critico']->pluck('nombre')->implode(', ');
+            }
+        }
+
+        $lineas[] = "";
+        $lineas[] = "💡 **Recomendaciones:**";
+        foreach ($this->generarRecomendaciones($analisis) as $rec) {
+            $lineas[] = "  {$rec}";
+        }
+
+        return implode("\n", $lineas);
+    }
+
+    private function generarRecomendaciones(array $analisis): array
+    {
+        $recs = [];
+        if ($analisis['stock_critico']->count() > 0) {
+            $recs[] = "🔴 Reponer urgente: " . $analisis['stock_critico']->pluck('nombre')->implode(', ');
+        }
+        if ($analisis['ventas_hoy']['count'] == 0) {
+            $recs[] = "📣 No hubo ventas hoy. Considera ofrecer una promoción.";
+        } elseif ($analisis['ventas_hoy']['total'] > ($analisis['ventas_semana']['total'] / 7) * 1.5) {
+            $recs[] = "🚀 Día excepcional: las ventas de hoy superan el promedio diario.";
+        }
+        if ($analisis['clientes_total'] < 10) {
+            $recs[] = "👥 Pocos clientes registrados. Incentiva el registro de DNI en cada venta.";
+        }
+        if (empty($recs)) {
+            $recs[] = "✅ El negocio opera normalmente. Mantén el buen servicio al cliente.";
+        }
+        return $recs;
+    }
+
+    private function analizarNegocio(): array
+    {
+        $hoy = Carbon::today();
+        $semana = Carbon::now()->subDays(7);
+        $mes = Carbon::now()->startOfMonth();
+
+        $ventasHoy = Venta::where('estado', 'completada')->whereDate('created_at', $hoy);
+        $ventasSemana = Venta::where('estado', 'completada')->where('created_at', '>=', $semana);
+        $ventasMes = Venta::where('estado', 'completada')->where('created_at', '>=', $mes);
+
+        $topCliente = DB::table('clientes')
+            ->join('ventas', 'clientes.id', '=', 'ventas.cliente_id')
+            ->where('ventas.estado', 'completada')
+            ->where('ventas.created_at', '>=', $mes)
+            ->select('clientes.id', 'clientes.nombre', 'clientes.apellido', DB::raw('SUM(ventas.total) as total_gastado'))
+            ->groupBy('clientes.id', 'clientes.nombre', 'clientes.apellido')
+            ->orderByDesc('total_gastado')
+            ->first();
+
+
+        return [
+            'ventas_hoy' => [
+                'count' => (clone $ventasHoy)->count(),
+                'total' => (clone $ventasHoy)->sum('total'),
+            ],
+            'ventas_semana' => [
+                'count' => (clone $ventasSemana)->count(),
+                'total' => (clone $ventasSemana)->sum('total'),
+                'por_dia' => Venta::where('estado', 'completada')
+                    ->where('created_at', '>=', $semana)
+                    ->selectRaw('DATE(created_at) as fecha, COUNT(*) as ventas, SUM(total) as total')
+                    ->groupBy('fecha')
+                    ->orderBy('fecha')
+                    ->get(),
+            ],
+            'ventas_mes' => [
+                'count' => (clone $ventasMes)->count(),
+                'total' => (clone $ventasMes)->sum('total'),
+            ],
+            'top_productos' => DetalleVenta::join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
+                ->where('ventas.estado', 'completada')
+                ->where('ventas.created_at', '>=', $semana)
+                ->selectRaw('nombre_producto, SUM(cantidad) as total')
+                ->groupBy('nombre_producto')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->pluck('total', 'nombre_producto'),
+            'stock_critico' => Producto::where('activo', true)
+                ->whereColumn('stock', '<=', 'stock_minimo')
+                ->orderBy('stock')
+                ->get(['nombre', 'stock', 'stock_minimo']),
+            'productos_activos' => Producto::where('activo', true)->count(),
+            'clientes_total' => Cliente::count(),
+            'clientes_frecuentes' => Cliente::where('frecuente', true)->count(),
+            'top_cliente' => $topCliente,
+            'pago_metodos' => Venta::where('estado', 'completada')
+                ->where('created_at', '>=', $mes)
+                ->selectRaw('metodo_pago, COUNT(*) as count, SUM(total) as total')
+                ->groupBy('metodo_pago')
+                ->get(),
+            // Catálogo completo de productos
+            'catalogo_productos' => Producto::where('activo', true)
+                ->orderBy('nombre')
+                ->get(['nombre', 'descripcion', 'precio', 'stock', 'stock_minimo']),
+            // Recetario: enfermedades con productos recomendados
+            'recetario' => Enfermedad::where('activa', true)
+                ->with(['productos' => fn($q) => $q->where('activo', true)])
+                ->get(),
+            // Clientes con acumulado de fidelización
+            'lista_clientes' => Cliente::orderByDesc('acumulado_naturales')
+                ->get(['nombre', 'apellido', 'dni', 'telefono', 'acumulado_naturales', 'frecuente']),
+        ];
+    }
+
+    private function formatearContexto(array $analisis, ?array $contextoCliente): string
+    {
+        $ctx = "DATOS DEL NEGOCIO NATURACOR:\n";
+        $ctx .= "Ventas hoy: {$analisis['ventas_hoy']['count']} (S/{$analisis['ventas_hoy']['total']}). ";
+        $ctx .= "Esta semana: {$analisis['ventas_semana']['count']} (S/{$analisis['ventas_semana']['total']}). ";
+        $ctx .= "Este mes: {$analisis['ventas_mes']['count']} (S/{$analisis['ventas_mes']['total']}). ";
+        $ctx .= "Clientes registrados: {$analisis['clientes_total']}.\n\n";
+
+        // Catálogo de productos
+        $ctx .= "CATÁLOGO DE PRODUCTOS DISPONIBLES EN TIENDA:\n";
+        foreach ($analisis['catalogo_productos'] as $p) {
+            $estado = $p->stock <= $p->stock_minimo ? ' ⚠️STOCK BAJO' : '';
+            $ctx .= "- {$p->nombre}: S/{$p->precio} | Stock: {$p->stock} unidades{$estado}";
+            if ($p->descripcion) $ctx .= " | {$p->descripcion}";
+            $ctx .= "\n";
+        }
+
+        // Recetario
+        if ($analisis['recetario']->isNotEmpty()) {
+            $ctx .= "\nRECETARIO NATURACOR (enfermedades y productos recomendados):\n";
+            foreach ($analisis['recetario'] as $enfermedad) {
+                $ctx .= "Condición: {$enfermedad->nombre}";
+                if ($enfermedad->descripcion) $ctx .= " — {$enfermedad->descripcion}";
+                $ctx .= "\n";
+                foreach ($enfermedad->productos as $prod) {
+                    $ctx .= "  → Producto recomendado: {$prod->nombre} (S/{$prod->precio})";
+                    if ($prod->pivot->instrucciones) {
+                        $ctx .= " — Instrucciones: {$prod->pivot->instrucciones}";
+                    }
+                    $ctx .= "\n";
+                }
+            }
+        }
+
+        // Clientes y fidelización
+        $umbral = config('naturacor.fidelizacion_monto', 500);
+        $ctx .= "\nCLIENTES REGISTRADOS Y ACUMULADO DE FIDELIZACIÓN (meta: S/{$umbral} para premio):\n";
+        foreach ($analisis['lista_clientes'] as $c) {
+            $nombre = trim("{$c->nombre} {$c->apellido}");
+            $acum = number_format($c->acumulado_naturales, 2);
+            $falta = max(0, $umbral - $c->acumulado_naturales);
+            $estado = $c->acumulado_naturales >= $umbral ? ' 🏆 LISTO PARA PREMIO' : '';
+            $ctx .= "- {$nombre} (DNI: {$c->dni}): Acumulado S/{$acum} | Falta S/" . number_format($falta, 2) . " para premio{$estado}\n";
+        }
+
+        if ($contextoCliente) {
+            $ctx .= "\nCONTEXTO PERSONALIZADO DEL CLIENTE:\n";
+            $ctx .= json_encode($contextoCliente, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $ctx .= "\n";
+        }
+
+        return $ctx;
+    }
+
+    private function construirPromptDinamico(string $consulta, string $contextoIa): string
+    {
+        return "ROL: Analista de salud naturista basado en datos de consumo y ventas reales.\n"
+            ."INSTRUCCIONES:\n"
+            ."- No des respuestas genéricas.\n"
+            ."- Si hay cliente en contexto, explica patrones reales, condiciones inferidas y recomendaciones concretas.\n"
+            ."- Explica por qué recomiendas cada producto según historial/perfil/tendencia.\n"
+            ."- Distingue explícitamente: inferencia de compra != diagnóstico médico.\n"
+            ."- Responde en español, con estructura clara y accionable.\n\n"
+            ."CONTEXTO DEL SISTEMA:\n{$contextoIa}\n\n"
+            ."CONSULTA DEL USUARIO:\n{$consulta}";
+    }
+
+    private function systemPromptBase(): string
+    {
+        return "Eres NATURA, un analista de salud naturista para NATURACOR. "
+            ."Tu prioridad es responder con base en datos reales del sistema: compras, perfil inferido, recetario y recomendaciones del motor. "
+            ."Evita respuestas vacías o genéricas; justifica con evidencia del contexto proporcionado.";
+    }
+
+    private function construirContextoCliente(?Cliente $cliente, Request $request): ?array
+    {
+        if (! $cliente) {
+            return null;
+        }
+
+        $this->perfilSaludService->asegurarPerfilReciente((int) $cliente->id, false);
+        $sucursalId = $request->user()?->sucursal_id;
+        $reco = $this->recomendacionEngine->recomendar($cliente, $sucursalId, 6, false);
+
+        $perfil = ClientePerfilAfinidad::query()
+            ->where('cliente_id', $cliente->id)
+            ->with('enfermedad:id,nombre,categoria')
+            ->orderByDesc('score')
+            ->limit(6)
+            ->get();
+
+        $compras30 = Venta::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'completada')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+
+        $detalleReciente = DB::table('detalle_ventas')
+            ->join('ventas', 'detalle_ventas.venta_id', '=', 'ventas.id')
+            ->join('productos', 'detalle_ventas.producto_id', '=', 'productos.id')
+            ->where('ventas.cliente_id', $cliente->id)
+            ->where('ventas.estado', 'completada')
+            ->where('ventas.created_at', '>=', now()->subDays(90))
+            ->selectRaw('productos.nombre as producto, SUM(detalle_ventas.cantidad) as unidades')
+            ->groupBy('productos.nombre')
+            ->orderByDesc('unidades')
+            ->limit(8)
+            ->get();
+
+        return [
+            'cliente' => [
+                'id' => $cliente->id,
+                'dni' => $cliente->dni,
+                'nombre' => $cliente->nombreCompleto(),
+                'acumulado_naturales' => (float) $cliente->acumulado_naturales,
+            ],
+            'patrones' => [
+                'frecuencia_30d' => $compras30,
+                'productos_frecuentes_90d' => $detalleReciente,
+            ],
+            'enfermedades_inferidas' => $perfil->map(function ($fila) {
+                return [
+                    'enfermedad_id' => $fila->enfermedad_id,
+                    'nombre' => $fila->enfermedad->nombre ?? ('#'.$fila->enfermedad_id),
+                    'categoria' => $fila->enfermedad->categoria,
+                    'score_pct' => round(((float) $fila->score) * 100, 2),
+                    'evidencias' => (int) $fila->evidencia_count,
+                ];
+            })->values()->all(),
+            'recomendaciones' => [
+                'perfil_filas' => $reco['perfil_filas'] ?? 0,
+                'items' => $reco['items'] ?? [],
+                'meta' => $reco['meta'] ?? [],
+            ],
+        ];
+    }
+
+    private function verificarConexion(): bool
+    {
+        try {
+            $response = Http::withOptions(['verify' => false, 'timeout' => 5])
+                ->get('https://api.groq.com');
+            return true;
+        } catch (\Exception $e) {
+            try {
+                Http::withOptions(['verify' => false, 'timeout' => 3])
+                    ->get('https://www.google.com');
+                return true;
+            } catch (\Exception $e2) {
+                Log::warning('IA - No internet connection detected: ' . $e2->getMessage());
+                return false;
+            }
+        }
+    }
+}

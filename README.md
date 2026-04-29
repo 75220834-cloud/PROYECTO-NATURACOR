@@ -255,7 +255,8 @@ naturacor/
 ├── tests/
 │   ├── Unit/                     # 12 archivos
 │   └── Feature/                  # 20 archivos (incluye Excel + Forecasting + Jobs)
-└── .github/workflows/            # CI/CD GitHub Actions
+├── .github/workflows/            # CI/CD GitHub Actions
+└── docs
 ```
 
 ---

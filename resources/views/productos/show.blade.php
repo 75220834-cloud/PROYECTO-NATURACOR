@@ -46,15 +46,20 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body p-4">
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted" style="width:140px;">Nombre</td><td class="fw-semibold">{{ $producto->nombre }}</td></tr>
-                    <tr><td class="text-muted">Tipo</td><td>{{ $producto->tipo === 'natural' ? '🌿 Natural' : '🧃 Cordial' }}</td></tr>
-                    <tr><td class="text-muted">Descripción</td><td>{{ $producto->descripcion ?? '—' }}</td></tr>
-                    <tr><td class="text-muted">Sucursal</td><td>{{ $producto->sucursal?->nombre ?? 'Todas' }}</td></tr>
-                    <tr><td class="text-muted">Frecuente</td><td>{{ $producto->frecuente ? '⚡ Sí (POS rápido)' : 'No' }}</td></tr>
-                    <tr><td class="text-muted">Estado</td>
-                        <td><span class="badge {{ $producto->activo ? 'bg-success' : 'bg-secondary' }}">{{ $producto->activo ? 'Activo' : 'Inactivo' }}</span></td>
-                    </tr>
-                    <tr><td class="text-muted">Registrado</td><td>{{ $producto->created_at->format('d/m/Y') }}</td></tr>
+                    <thead class="visually-hidden">
+                        <tr><th scope="col">Campo</th><th scope="col">Valor</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="text-muted" style="width:140px;">Nombre</td><td class="fw-semibold">{{ $producto->nombre }}</td></tr>
+                        <tr><td class="text-muted">Tipo</td><td>{{ $producto->tipo === 'natural' ? '🌿 Natural' : '🍵 Cordial' }}</td></tr>
+                        <tr><td class="text-muted">Descripción</td><td>{{ $producto->descripcion ?? '—' }}</td></tr>
+                        <tr><td class="text-muted">Sucursal</td><td>{{ $producto->sucursal?->nombre ?? 'Todas' }}</td></tr>
+                        <tr><td class="text-muted">Frecuente</td><td>{{ $producto->frecuente ? '⚡ Sí (POS rápido)' : 'No' }}</td></tr>
+                        <tr><td class="text-muted">Estado</td>
+                            <td><span class="badge {{ $producto->activo ? 'bg-success' : 'bg-secondary' }}">{{ $producto->activo ? 'Activo' : 'Inactivo' }}</span></td>
+                        </tr>
+                        <tr><td class="text-muted">Registrado</td><td>{{ $producto->created_at->format('d/m/Y') }}</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>

@@ -67,13 +67,18 @@
             <div class="card-body p-4">
                 <div class="fw-bold mb-3">👤 Información</div>
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted">Empleado</td><td class="fw-semibold">{{ $cajaSesion->empleado?->name ?? '—' }}</td></tr>
-                    <tr><td class="text-muted">Apertura</td><td>{{ $cajaSesion->apertura_at?->format('H:i d/m/Y') ?? '—' }}</td></tr>
-                    <tr><td class="text-muted">Cierre</td><td>{{ $cajaSesion->cierre_at?->format('H:i d/m/Y') ?? 'Abierta' }}</td></tr>
-                    <tr><td class="text-muted">Ventas</td><td>{{ $cajaSesion->ventas->count() }}</td></tr>
-                    @if($cajaSesion->notas_cierre)
-                    <tr><td class="text-muted">Notas</td><td>{{ $cajaSesion->notas_cierre }}</td></tr>
-                    @endif
+                    <thead class="visually-hidden">
+                        <tr><th scope="col">Campo</th><th scope="col">Valor</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="text-muted">Empleado</td><td class="fw-semibold">{{ $cajaSesion->empleado?->name ?? '—' }}</td></tr>
+                        <tr><td class="text-muted">Apertura</td><td>{{ $cajaSesion->apertura_at?->format('H:i d/m/Y') ?? '—' }}</td></tr>
+                        <tr><td class="text-muted">Cierre</td><td>{{ $cajaSesion->cierre_at?->format('H:i d/m/Y') ?? 'Abierta' }}</td></tr>
+                        <tr><td class="text-muted">Ventas</td><td>{{ $cajaSesion->ventas->count() }}</td></tr>
+                        @if($cajaSesion->notas_cierre)
+                        <tr><td class="text-muted">Notas</td><td>{{ $cajaSesion->notas_cierre }}</td></tr>
+                        @endif
+                    </tbody>
                 </table>
             </div>
         </div>

@@ -134,6 +134,10 @@
             <div class="card-body p-4">
                 <h6 class="fw-bold text-muted text-uppercase mb-3" style="font-size:11px; letter-spacing:1px;">📋 Precios de Referencia</h6>
                 <table class="table table-sm table-borderless mb-0">
+                    <thead class="visually-hidden">
+                        <tr><th scope="col">Tipo</th><th scope="col">Precio</th></tr>
+                    </thead>
+                    <tbody>
                     @foreach($tipos as $clave => $label)
                     @if($clave !== 'invitado')
                     <tr>

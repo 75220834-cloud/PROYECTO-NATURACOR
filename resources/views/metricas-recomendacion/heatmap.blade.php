@@ -112,11 +112,11 @@
             <table class="nc-heatmap-table">
                 <thead>
                     <tr>
-                        <th class="fila-enf" style="background:#0f172a;">Enfermedad</th>
+                        <th class="fila-enf" scope="col" style="background:#0f172a;">Enfermedad</th>
                         @foreach($matriz['sucursales'] as $s)
-                            <th class="col-suc" style="background:#0f172a; color:#cbd5e1;">{{ $s['nombre'] }}</th>
+                            <th class="col-suc" scope="col" style="background:#0f172a; color:#cbd5e1;">{{ $s['nombre'] }}</th>
                         @endforeach
-                        <th class="col-suc" style="background:#0f172a; color:#94a3b8;">Total</th>
+                        <th class="col-suc" scope="col" style="background:#0f172a; color:#94a3b8;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -125,7 +125,7 @@
                         @php $enf = $idIndex->get($eId); @endphp
                         @if(!$enf) @continue @endif
                         <tr>
-                            <th class="fila-enf">
+                            <th class="fila-enf" scope="row">
                                 {{ $enf['nombre'] }}
                                 @if($enf['categoria'])
                                     <span class="nc-pill-cat">{{ $enf['categoria'] }}</span>
@@ -154,7 +154,7 @@
                         </tr>
                     @endforeach
                     <tr class="total-row">
-                        <th class="fila-enf">Total por sucursal</th>
+                        <th class="fila-enf" scope="row">Total por sucursal</th>
                         @foreach($matriz['sucursales'] as $s)
                             <td class="celda">{{ (int) ($matriz['col_total'][$s['id']] ?? 0) }}</td>
                         @endforeach

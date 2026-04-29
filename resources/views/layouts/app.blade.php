@@ -6,9 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'NATURACOR') - Sistema de Gestión</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00ruLTd9B4FMBIxCrX9x71ROecyHtELFiGMnMWfzMFcKnCEkU7zoA" crossorigin="anonymous">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1056,7 +1056,9 @@
                    font-family:'Sora',sans-serif; transition:all 0.2s ease;
                    box-shadow:none !important;"
             onmouseover="this.style.borderColor='rgba(40,199,111,0.40)'; this.style.boxShadow='0 0 14px rgba(40,199,111,0.2)'"
-            onmouseout="this.style.borderColor='rgba(255,255,255,0.10)'; this.style.boxShadow='none'">
+            onmouseout="this.style.borderColor='rgba(255,255,255,0.10)'; this.style.boxShadow='none'"
+            onfocus="this.style.borderColor='rgba(40,199,111,0.40)'; this.style.boxShadow='0 0 14px rgba(40,199,111,0.2)'"
+            onblur="this.style.borderColor='rgba(255,255,255,0.10)'; this.style.boxShadow='none'">
             <div style="width:27px; height:27px; border-radius:50%;
                         background:linear-gradient(135deg,#28c76f,#0e4b2a);
                         display:flex; align-items:center; justify-content:center;
@@ -1106,8 +1108,8 @@
     @yield('content')
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmkXhvFQ1JEo+jqjA3o+M2VDMJW" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" integrity="sha384-dBhBjGNRSPk4CWAlqHF6hWLuJGj10pWUBGlICrN9l7MFO5mJgZ3aFV9RwpvBbBl" crossorigin="anonymous"></script>
 <script>
 /* ══ CANVAS BACKGROUND ══════════════════════════════════════════════════ */
 (function () {

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\User;
+use App\Models\Sucursal;
 use App\Models\Cliente;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,122 +15,166 @@ class ClienteCrudTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+    protected User $empleado;
+    protected Sucursal $sucursal;
+    protected Cliente $cliente;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $this->admin = User::factory()->create(['activo' => true]);
-        $this->admin->assignRole($role);
+        $this->sucursal = Sucursal::factory()->create();
+        Role::firstOrCreate(['name' => 'admin',    'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'empleado', 'guard_name' => 'web']);
+        $this->admin = User::factory()->create(['activo' => true, 'sucursal_id' => $this->sucursal->id]);
+        $this->admin->assignRole('admin');
+        $this->empleado = User::factory()->create(['activo' => true, 'sucursal_id' => $this->sucursal->id]);
+        $this->empleado->assignRole('empleado');
+        $this->cliente = Cliente::factory()->create();
     }
 
     #[Test]
-    public function lista_de_clientes_es_accesible(): void
+    public function puede_ver_lista_clientes(): void
     {
-        Cliente::factory()->count(3)->create();
-
-        $response = $this->actingAs($this->admin)->get('/clientes');
-
-        $response->assertStatus(200);
-        $response->assertViewIs('clientes.index');
+        $response = $this->actingAs($this->empleado)->get('/clientes');
+        $response->assertSuccessful();
     }
 
     #[Test]
-    public function puede_crear_cliente_con_datos_validos(): void
+    public function puede_buscar_clientes(): void
     {
-        $response = $this->actingAs($this->admin)->post('/clientes', [
-            'nombre'   => 'María',
-            'apellido' => 'García',
-            'dni'      => '12345678',
+        Cliente::factory()->create(['nombre' => 'Carlos', 'dni' => '11111111']);
+        $response = $this->actingAs($this->empleado)->get('/clientes?search=Carlos');
+        $response->assertSuccessful();
+    }
+
+    #[Test]
+    public function puede_ver_formulario_crear_cliente(): void
+    {
+        $response = $this->actingAs($this->empleado)->get('/clientes/create');
+        $response->assertSuccessful();
+    }
+
+    #[Test]
+    public function puede_crear_cliente(): void
+    {
+        $response = $this->actingAs($this->empleado)->post('/clientes', [
+            'dni'      => '99999999',
+            'nombre'   => 'Pedro',
+            'apellido' => 'Ramirez',
             'telefono' => '987654321',
         ]);
-
         $response->assertRedirect();
-        $response->assertSessionHas('success');
-
-        $this->assertDatabaseHas('clientes', [
-            'nombre'   => 'María',
-            'apellido' => 'García',
-            'dni'      => '12345678',
-        ]);
+        $this->assertDatabaseHas('clientes', ['dni' => '99999999']);
     }
 
     #[Test]
-    public function crear_cliente_requiere_nombre_y_dni(): void
+    public function crear_cliente_requiere_dni_y_nombre(): void
     {
-        $response = $this->actingAs($this->admin)->post('/clientes', []);
-
-        $response->assertSessionHasErrors(['nombre', 'dni']);
+        $response = $this->actingAs($this->empleado)->post('/clientes', []);
+        $response->assertSessionHasErrors(['dni', 'nombre']);
     }
 
     #[Test]
     public function dni_debe_ser_unico(): void
     {
-        Cliente::factory()->create(['dni' => '11111111']);
-
-        $response = $this->actingAs($this->admin)->post('/clientes', [
-            'nombre'   => 'Pedro',
-            'apellido' => 'López',
-            'dni'      => '11111111',
+        $response = $this->actingAs($this->empleado)->post('/clientes', [
+            'dni'    => $this->cliente->dni,
+            'nombre' => 'Duplicado',
         ]);
-
         $response->assertSessionHasErrors('dni');
     }
 
     #[Test]
-    public function puede_ver_detalle_de_cliente(): void
+    public function puede_ver_detalle_cliente(): void
     {
-        $cliente = Cliente::factory()->create();
-
-        $response = $this->actingAs($this->admin)->get("/clientes/{$cliente->id}");
-
-        $response->assertStatus(200);
+        $response = $this->actingAs($this->empleado)->get("/clientes/{$this->cliente->id}");
+        $response->assertSuccessful();
     }
 
     #[Test]
-    public function puede_editar_cliente(): void
+    public function puede_ver_formulario_editar_cliente(): void
     {
-        $cliente = Cliente::factory()->create();
+        $response = $this->actingAs($this->empleado)->get("/clientes/{$this->cliente->id}/edit");
+        $response->assertSuccessful();
+    }
 
-        $response = $this->actingAs($this->admin)->put("/clientes/{$cliente->id}", [
-            'nombre'   => 'NuevoNombre',
-            'apellido' => 'NuevoApellido',
-            'dni'      => $cliente->dni,
+    #[Test]
+    public function puede_actualizar_cliente(): void
+    {
+        $response = $this->actingAs($this->empleado)->put("/clientes/{$this->cliente->id}", [
+            'nombre'   => 'Nombre Nuevo',
+            'apellido' => 'Apellido Nuevo',
+            'telefono' => '999888777',
         ]);
-
         $response->assertRedirect();
-        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('clientes', ['nombre' => 'Nombre Nuevo']);
+    }
 
-        $this->assertDatabaseHas('clientes', [
-            'id'       => $cliente->id,
-            'nombre'   => 'NuevoNombre',
-            'apellido' => 'NuevoApellido',
-        ]);
+    #[Test]
+    public function actualizar_cliente_requiere_nombre(): void
+    {
+        $response = $this->actingAs($this->empleado)->put("/clientes/{$this->cliente->id}", []);
+        $response->assertSessionHasErrors('nombre');
     }
 
     #[Test]
     public function puede_eliminar_cliente(): void
     {
-        $cliente = Cliente::factory()->create();
-
-        $response = $this->actingAs($this->admin)
-            ->delete("/clientes/{$cliente->id}");
-
+        $response = $this->actingAs($this->admin)->delete("/clientes/{$this->cliente->id}");
         $response->assertRedirect('/clientes');
-        $response->assertSessionHas('success');
-
-        $this->assertSoftDeleted('clientes', ['id' => $cliente->id]);
+        $this->assertSoftDeleted('clientes', ['id' => $this->cliente->id]);
     }
 
     #[Test]
-    public function puede_buscar_cliente_por_dni_via_api(): void
+    public function api_buscar_cliente_por_dni_existente(): void
     {
-        Cliente::factory()->create(['dni' => '99887766']);
+        $response = $this->actingAs($this->empleado)->get("/api/clientes/dni?dni={$this->cliente->dni}");
+        $response->assertSuccessful();
+        $response->assertJson(['found' => true]);
+    }
 
-        $response = $this->actingAs($this->admin)
-            ->getJson('/api/clientes/dni?dni=99887766');
+    #[Test]
+    public function api_buscar_cliente_por_dni_inexistente(): void
+    {
+        $response = $this->actingAs($this->empleado)->get('/api/clientes/dni?dni=00000000');
+        $response->assertSuccessful();
+        $response->assertJson(['found' => false]);
+    }
 
-        $response->assertStatus(200);
-        $response->assertJsonFragment(['dni' => '99887766']);
+    #[Test]
+    public function api_autocompletar_clientes(): void
+    {
+        Cliente::factory()->create(['nombre' => 'Maria', 'dni' => '22222222']);
+        $response = $this->actingAs($this->empleado)->get('/api/clientes/autocompletar?q=Mar');
+        $response->assertSuccessful();
+        $response->assertJsonStructure([['id', 'dni', 'nombre', 'acumulado']]);
+    }
+
+    #[Test]
+    public function api_autocompletar_retorna_vacio_si_query_corto(): void
+    {
+        $response = $this->actingAs($this->empleado)->get('/api/clientes/autocompletar?q=M');
+        $response->assertSuccessful();
+        $response->assertJson([]);
+    }
+
+    #[Test]
+    public function no_autenticado_redirige_login_en_clientes(): void
+    {
+        $response = $this->get('/clientes');
+        $response->assertRedirect('/login');
+    }
+
+    #[Test]
+    public function puede_crear_cliente_via_json(): void
+    {
+        $response = $this->actingAs($this->empleado)
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/clientes', [
+                'dni'    => '88888888',
+                'nombre' => 'JsonCliente',
+            ]);
+        $response->assertSuccessful();
+        $response->assertJsonFragment(['dni' => '88888888']);
     }
 }

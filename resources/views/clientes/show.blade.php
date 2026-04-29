@@ -40,10 +40,15 @@
         <div class="card border-0 shadow-sm rounded-4 p-3 mt-3">
             <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#6b7280;letter-spacing:0.5px;margin-bottom:8px;">Información de contacto</div>
             <table class="table table-sm mb-0">
-                <tr><td class="text-muted" style="font-size:13px;">DNI</td><td><code>{{ $cliente->dni }}</code></td></tr>
-                <tr><td class="text-muted" style="font-size:13px;">Teléfono</td><td>{{ $cliente->telefono ?? '—' }}</td></tr>
-                <tr><td class="text-muted" style="font-size:13px;">Email</td><td>{{ $cliente->email ?? '—' }}</td></tr>
-                <tr><td class="text-muted" style="font-size:13px;">Cliente desde</td><td>{{ $cliente->created_at->format('d/m/Y') }}</td></tr>
+                <thead class="visually-hidden">
+                    <tr><th scope="col">Campo</th><th scope="col">Valor</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="text-muted" style="font-size:13px;">DNI</td><td><code>{{ $cliente->dni }}</code></td></tr>
+                    <tr><td class="text-muted" style="font-size:13px;">Teléfono</td><td>{{ $cliente->telefono ?? '—' }}</td></tr>
+                    <tr><td class="text-muted" style="font-size:13px;">Email</td><td>{{ $cliente->email ?? '—' }}</td></tr>
+                    <tr><td class="text-muted" style="font-size:13px;">Cliente desde</td><td>{{ $cliente->created_at->format('d/m/Y') }}</td></tr>
+                </tbody>
             </table>
         </div>
     </div>

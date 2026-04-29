@@ -80,7 +80,7 @@ class AbTestingService
         return match ($estrategia) {
             self::ESTRATEGIA_DIA_PAR_IMPAR => (int) now()->day % 2 === 0 ? 0 : 99,
             self::ESTRATEGIA_ALEATORIO     => random_int(0, 99),
-            default                        => (int) (hexdec(substr(md5((string) $clienteId), 0, 8)) % 100),
+            default                        => (int) (abs(crc32((string) $clienteId)) % 100),
         };
     }
 

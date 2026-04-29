@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+<title>Reporte de Ventas NATURACOR</title>
 <head>
 <meta charset="UTF-8">
 <style>

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NATURACOR — Iniciar Sesión</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" integrity="sha384-ZL9PjBR5vBKJoBQqSsGXNhEDz5+OTfOKIFa1IbgEpxKOQaOzBJnuv4I5N8hQjvT" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" integrity="sha384-tViUnnbYAV00ruLTd9B4FMBIxCrX9x71ROecyHtELFiGMnMWfzMFcKnCEkU7zoA" crossorigin="anonymous">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

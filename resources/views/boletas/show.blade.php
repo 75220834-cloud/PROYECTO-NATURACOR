@@ -103,15 +103,20 @@
 
             <!-- Totales -->
             <table style="width:100%;font-size:13px;margin-bottom:12px;">
-                <tr><td class="text-muted">Subtotal</td><td class="text-end">S/ {{ number_format($venta->subtotal,2) }}</td></tr>
-                @if($venta->descuento > 0)
-                <tr><td class="text-muted">Descuento</td><td class="text-end text-danger">- S/ {{ number_format($venta->descuento,2) }}</td></tr>
-                @endif
-                <tr><td class="text-muted">IGV (18%)</td><td class="text-end">S/ {{ number_format($venta->igv,2) }}</td></tr>
-                <tr style="border-top:2px solid rgba(255,255,255,0.12);">
-                    <td class="pt-2 fw-bold" style="font-size:16px;">TOTAL</td>
-                    <td class="pt-2 text-end fw-bold" style="font-size:18px;color:var(--neon);">S/ {{ number_format($venta->total,2) }}</td>
-                </tr>
+                <thead class="visually-hidden">
+                    <tr><th scope="col">Concepto</th><th scope="col">Monto</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="text-muted">Subtotal</td><td class="text-end">S/ {{ number_format($venta->subtotal,2) }}</td></tr>
+                    @if($venta->descuento > 0)
+                        <tr><td class="text-muted">Descuento</td><td class="text-end text-danger">- S/ {{ number_format($venta->descuento,2) }}</td></tr>
+                    @endif
+                    <tr><td class="text-muted">IGV (18%)</td><td class="text-end">S/ {{ number_format($venta->igv,2) }}</td></tr>
+                    <tr style="border-top:2px solid rgba(255,255,255,0.12);">
+                        <td class="pt-2 fw-bold" style="font-size:16px;">TOTAL</td>
+                        <td class="pt-2 text-end fw-bold" style="font-size:18px;color:var(--neon);">S/ {{ number_format($venta->total,2) }}</td>
+                    </tr>
+                </tbody>
             </table>
 
             <!-- Pago y Vendedor -->

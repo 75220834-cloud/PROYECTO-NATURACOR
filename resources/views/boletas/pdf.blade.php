@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
+<title>Boleta NATURACOR</title>
 <head>
 <meta charset="UTF-8">
 <style>

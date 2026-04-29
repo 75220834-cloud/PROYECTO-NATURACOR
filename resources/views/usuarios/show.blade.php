@@ -29,11 +29,16 @@
             <small class="text-muted">{{ $usuario->email }}</small>
             <hr>
             <table class="table table-sm mb-0 text-start">
-                <tr><td class="text-muted">Sucursal</td><td>{{ $usuario->sucursal?->nombre ?? '—' }}</td></tr>
-                <tr><td class="text-muted">Estado</td>
-                    <td><span class="badge {{ $usuario->activo ? 'bg-success' : 'bg-secondary' }}">{{ $usuario->activo ? 'Activo' : 'Inactivo' }}</span></td>
-                </tr>
-                <tr><td class="text-muted">Miembro desde</td><td>{{ $usuario->created_at->format('d/m/Y') }}</td></tr>
+                <thead class="visually-hidden">
+                    <tr><th scope="col">Campo</th><th scope="col">Valor</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="text-muted">Sucursal</td><td>{{ $usuario->sucursal?->nombre ?? '—' }}</td></tr>
+                    <tr><td class="text-muted">Estado</td>
+                        <td><span class="badge {{ $usuario->activo ? 'bg-success' : 'bg-secondary' }}">{{ $usuario->activo ? 'Activo' : 'Inactivo' }}</span></td>
+                    </tr>
+                    <tr><td class="text-muted">Miembro desde</td><td>{{ $usuario->created_at->format('d/m/Y') }}</td></tr>
+                </tbody>
             </table>
         </div>
     </div>

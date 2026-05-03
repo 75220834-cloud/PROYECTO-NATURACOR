@@ -61,25 +61,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/recomendaciones/{cliente}', [RecomendacionController::class, 'show'])->name('api.recomendaciones.show');
     Route::post('/api/recomendaciones/evento', [RecomendacionController::class, 'registrarEvento'])->name('api.recomendaciones.evento');
 
-    // Métricas del recomendador (evaluación / tesis)
-    Route::get('/metricas/recomendaciones', [RecomendacionMetricasController::class, 'index'])->name('metricas.recomendaciones');
-
-    // Bloque 6 — Mapa de calor de enfermedades (vista + export CSV)
-    Route::get('/metricas/heatmap-enfermedades', [HeatmapEnfermedadesController::class, 'index'])
-        ->name('metricas.heatmap_enfermedades');
-    Route::get('/metricas/heatmap-enfermedades/export.csv', [HeatmapEnfermedadesController::class, 'exportCsv'])
-        ->name('metricas.heatmap_enfermedades.csv');
-
-    // Caja
-    Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
-    Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
-    Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
-    Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
-    Route::get('/caja/{cajaSesion}', [CajaController::class, 'show'])->name('caja.show');
-
-    // Reportes
-    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
-    Route::post('/reportes/generar', [ReporteController::class, 'generar'])->name('reportes.generar');
 
     // Boletas
     Route::get('/boletas/{venta}', [BoletaController::class, 'show'])->name('boletas.show');
@@ -111,6 +92,23 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {
+        // Caja
+        Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
+        Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
+        Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
+        Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
+        Route::get('/caja/{cajaSesion}', [CajaController::class, 'show'])->name('caja.show');
+
+        // Reportes
+        Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
+        Route::post('/reportes/generar', [ReporteController::class, 'generar'])->name('reportes.generar');
+
+        // Métricas
+        Route::get('/metricas/recomendaciones', [RecomendacionMetricasController::class, 'index'])->name('metricas.recomendaciones');
+        Route::get('/metricas/heatmap-enfermedades', [HeatmapEnfermedadesController::class, 'index'])->name('metricas.heatmap_enfermedades');
+        Route::get('/metricas/heatmap-enfermedades/export.csv', [HeatmapEnfermedadesController::class, 'exportCsv'])->name('metricas.heatmap_enfermedades.csv');
+
+        // Usuarios y Sucursales
         Route::resource('sucursales', SucursalController::class);
         Route::resource('usuarios', UsuarioController::class);
     });

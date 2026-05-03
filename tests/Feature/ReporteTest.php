@@ -40,10 +40,10 @@ class ReporteTest extends TestCase
     }
 
     #[Test]
-    public function empleado_puede_ver_pagina_reportes(): void
+    public function empleado_no_puede_ver_pagina_reportes(): void
     {
         $response = $this->actingAs($this->empleado)->get('/reportes');
-        $response->assertSuccessful();
+        $response->assertForbidden();
     }
 
     #[Test]
@@ -108,10 +108,10 @@ class ReporteTest extends TestCase
     }
 
     #[Test]
-    public function empleado_genera_reporte_solo_de_su_sucursal(): void
+    public function empleado_no_puede_generar_reporte(): void
     {
         $response = $this->actingAs($this->empleado)->post('/reportes/generar', []);
-        $response->assertSuccessful();
+        $response->assertForbidden();
     }
 
     #[Test]

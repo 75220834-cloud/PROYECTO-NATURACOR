@@ -90,15 +90,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fidelizacion', [FidelizacionController::class, 'index'])->name('fidelizacion.index');
     Route::post('/fidelizacion/{canje}/entregar', [FidelizacionController::class, 'entregar'])->name('fidelizacion.entregar');
 
+    // Caja (todos los autenticados — empleados necesitan abrir/cerrar caja para vender)
+    Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
+    Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
+    Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
+    Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
+    Route::get('/caja/{cajaSesion}', [CajaController::class, 'show'])->name('caja.show');
+
     // Admin only routes
     Route::middleware(['role:admin'])->group(function () {
-        // Caja
-        Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
-        Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
-        Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
-        Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
-        Route::get('/caja/{cajaSesion}', [CajaController::class, 'show'])->name('caja.show');
-
         // Reportes
         Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes.index');
         Route::post('/reportes/generar', [ReporteController::class, 'generar'])->name('reportes.generar');

@@ -970,13 +970,11 @@
                 <i class="bi bi-receipt"></i><span class="nav-label">Ventas</span>
             </a>
         </div>
-        @if(auth()->user()->isAdmin())
         <div class="nav-item">
             <a href="{{ route('caja.index') }}" class="{{ request()->routeIs('caja*') ? 'active' : '' }}">
                 <i class="bi bi-cash-stack"></i><span class="nav-label">Caja</span>
             </a>
         </div>
-        @endif
         <div class="nav-item">
             <a href="{{ route('fidelizacion.index') }}" class="{{ request()->routeIs('fidelizacion*') ? 'active' : '' }}">
                 <i class="bi bi-star-fill"></i><span class="nav-label">Fidelización</span>

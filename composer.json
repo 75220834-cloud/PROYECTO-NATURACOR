@@ -95,6 +95,16 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "ext-gd": "1.0",
+            "ext-iconv": "1.0",
+            "ext-libxml": "1.0",
+            "ext-simplexml": "1.0",
+            "ext-xmlreader": "1.0",
+            "ext-xmlwriter": "1.0",
+            "ext-zip": "1.0",
+            "ext-zlib": "1.0"
         }
     },
     "minimum-stability": "stable",

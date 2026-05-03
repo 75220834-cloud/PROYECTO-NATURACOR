@@ -284,7 +284,7 @@ naturacor/
 
 ```bash
 git clone https://github.com/75220834-cloud/PROYECTO-NATURACOR.git
-cd PROYECTO-NATURACOR/naturacor
+cd PROYECTO-NATURACOR
 ```
 
 ### 2. Instalar dependencias

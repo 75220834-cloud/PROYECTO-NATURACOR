@@ -9,6 +9,32 @@
     <div class="badge-location">
         <i class="bi bi-geo-alt-fill"></i> Jauja, Junín — Perú
     </div>
+    {{-- Buscador --}}
+    <form method="GET" action="{{ route('catalogo') }}" style="max-width:460px; margin:28px auto 0;">
+        <div style="display:flex; gap:8px;">
+            <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="🔍 Buscar producto por nombre..."
+                   style="flex:1; padding:12px 18px; border-radius:12px; border:1.5px solid rgba(191,255,0,0.30);
+                          background:rgba(0,102,34,0.40); color:#fff; font-family:'Montserrat',sans-serif;
+                          font-size:14px; outline:none; backdrop-filter:blur(12px);
+                          transition:border-color 0.3s, box-shadow 0.3s;"
+                   onfocus="this.style.borderColor='rgba(191,255,0,0.65)';this.style.boxShadow='0 0 20px rgba(191,255,0,0.20)'"
+                   onblur="this.style.borderColor='rgba(191,255,0,0.30)';this.style.boxShadow='none'">
+            <button type="submit" style="padding:12px 20px; border-radius:12px; border:1.5px solid rgba(191,255,0,0.45);
+                    background:linear-gradient(135deg,#00CC44,#BFFF00); color:#0A2914; font-weight:700;
+                    font-family:'Montserrat',sans-serif; font-size:13px; cursor:pointer;
+                    transition:all 0.3s; box-shadow:0 0 14px rgba(191,255,0,0.15);"
+                    onmouseover="this.style.boxShadow='0 0 30px rgba(191,255,0,0.35)'"
+                    onmouseout="this.style.boxShadow='0 0 14px rgba(191,255,0,0.15)'">
+                Buscar
+            </button>
+        </div>
+        @if($search)
+        <div style="margin-top:12px;">
+            <span style="font-size:13px; color:var(--text-sec);">Resultados para "<strong style="color:var(--bio-neon);">{{ $search }}</strong>"</span>
+            <a href="{{ route('catalogo') }}" style="color:#00FFFF; font-size:12px; margin-left:8px; text-decoration:none;">✕ Limpiar</a>
+        </div>
+        @endif
+    </form>
 </section>
 
 {{-- ── PRODUCTOS NATURALES ──────────────────────── --}}

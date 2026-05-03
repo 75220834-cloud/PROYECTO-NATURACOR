@@ -9,9 +9,16 @@ class CatalogoController extends Controller
 {
     public function index()
     {
-        $productos = Producto::where('activo', true)
-            ->where('stock', '>', 0)
-            ->orderBy('tipo')
+        $search = request('search');
+
+        $query = Producto::where('activo', true)
+            ->where('stock', '>', 0);
+
+        if ($search) {
+            $query->where('nombre', 'like', '%' . $search . '%');
+        }
+
+        $productos = $query->orderBy('tipo')
             ->orderBy('nombre')
             ->get();
 
@@ -25,6 +32,6 @@ class CatalogoController extends Controller
 
         $whatsapp = config('naturacor.empresa.whatsapp', '932857118');
 
-        return view('catalogo.index', compact('productos', 'cordiales', 'whatsapp'));
+        return view('catalogo.index', compact('productos', 'cordiales', 'whatsapp', 'search'));
     }
 }

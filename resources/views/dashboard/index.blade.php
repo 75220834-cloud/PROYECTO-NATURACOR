@@ -79,7 +79,8 @@
 </div>
 @endif
 
-{{-- ── WIDGET IA RECOMENDADOR ── --}}
+@if(auth()->user()->isAdmin())
+{{-- ── WIDGET IA RECOMENDADOR (solo admin) ── --}}
 <div class="row g-4 mb-4">
     <div class="col-12">
         <div class="nc-card" style="border:1px solid rgba(129,140,248,0.30); background:rgba(129,140,248,0.06);">
@@ -207,9 +208,11 @@
         </div>
     </div>
 </div>
+@endif
 
 <div class="row g-4">
-    <!-- Productos más vendidos -->
+    @if(auth()->user()->isAdmin())
+    <!-- Productos más vendidos (solo admin) -->
     <div class="col-12 col-lg-6">
         <div class="nc-card">
             <div class="nc-card-header">
@@ -229,8 +232,9 @@
             @endforelse
         </div>
     </div>
+    @endif
 
-    <!-- Stock bajo + Caja -->
+    <!-- Stock bajo + Caja (todos) -->
     <div class="col-12 col-lg-6">
         @if($stockBajo->count() > 0)
         <div class="nc-card mb-4">
@@ -249,7 +253,8 @@
         </div>
         @endif
 
-        {{-- ── BLOQUE 5 · WIDGET PRONÓSTICO DE DEMANDA (SES) ── --}}
+        @if(auth()->user()->isAdmin())
+        {{-- ── BLOQUE 5 · WIDGET PRONÓSTICO DE DEMANDA (SES) (solo admin) ── --}}
         <div class="nc-card mb-4" @if(!empty($forecastRiesgo)) style="border: 2px dashed #fcd34d;" @endif>
             <div class="nc-card-header">
                 <span>
@@ -316,6 +321,7 @@
                 </div>
             @endif
         </div>
+        @endif
 
         <!-- Caja activa -->
         @if($cajaActiva)
@@ -351,6 +357,7 @@
 @endsection
 
 @section('scripts')
+@if(auth()->user()->isAdmin())
 <script>
 const ventasData = @json($ventasSemana);
 const labels = ventasData.map(v => {
@@ -403,4 +410,5 @@ new Chart(document.getElementById('pagosChart'), {
 });
 @endif
 </script>
+@endif
 @endsection

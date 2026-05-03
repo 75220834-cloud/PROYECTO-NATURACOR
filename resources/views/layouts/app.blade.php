@@ -956,8 +956,12 @@
         </div>
         <div class="nav-section">Gestión</div>
         <div class="nav-item">
-            <a href="{{ route('productos.index') }}" class="{{ request()->routeIs('productos*') ? 'active' : '' }}">
+            @php $stockBajoCount = \App\Models\Producto::where('activo', true)->whereColumn('stock', '<=', 'stock_minimo')->when(auth()->user()->sucursal_id, fn($q) => $q->where('sucursal_id', auth()->user()->sucursal_id))->count(); @endphp
+            <a href="{{ route('productos.index') }}" class="{{ request()->routeIs('productos*') ? 'active' : '' }}" style="position:relative;">
                 <i class="bi bi-box-seam"></i><span class="nav-label">Productos</span>
+                @if($stockBajoCount > 0)
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center;box-shadow:0 0 8px rgba(239,68,68,0.5);">{{ $stockBajoCount }}</span>
+                @endif
             </a>
         </div>
         <div class="nav-item">

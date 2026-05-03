@@ -619,15 +619,215 @@
            RESPONSIVE
         ══════════════════════════════════════════════ */
         @media(max-width: 576px) {
-            .hero { padding: 55px 16px 45px; }
-            .hero h1 { letter-spacing: 2px; }
+            .hero { padding: 55px 16px 30px; }
+            .hero h1 { letter-spacing: 2px; font-size: 28px; }
             .nc-navbar { padding: 0 16px; }
             .nc-navbar .brand { font-size: 14px; letter-spacing: 2px; }
             .fab-whatsapp { width: 54px; height: 54px; font-size: 24px; bottom: 20px; right: 20px; }
             .product-img { height: 160px; }
             .section-title { font-size: 20px; }
+            .filter-sidebar { margin-bottom: 20px; }
+        }
+
+        /* ══════════════════════════════════════════════
+           FILTER SIDEBAR
+        ══════════════════════════════════════════════ */
+        .filter-sidebar {
+            background: var(--glass-body);
+            backdrop-filter: blur(18px);
+            border-radius: 18px;
+            border: 1px solid rgba(191,255,0,0.25);
+            padding: 22px;
+            box-shadow: 0 0 20px rgba(191,255,0,0.06), 0 8px 32px rgba(0,0,0,0.35);
+            position: sticky;
+            top: 80px;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(191,255,0,0.10);
+        }
+        .filter-section:last-of-type { border-bottom: none; }
+        .filter-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--bio-neon);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 6px rgba(191,255,0,0.25);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(191,255,0,0.25);
+            background: rgba(0,102,34,0.30);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .filter-input:focus {
+            border-color: rgba(191,255,0,0.60);
+            box-shadow: 0 0 16px rgba(191,255,0,0.15);
+        }
+        .filter-input::placeholder { color: rgba(210,231,179,0.4); }
+        .filter-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-sec);
+            transition: color 0.2s;
+        }
+        .filter-check:hover { color: var(--text-prim); }
+        .filter-check input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(191,255,0,0.35);
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .filter-check input[type="radio"]:checked {
+            border-color: var(--bio-neon);
+            background: var(--bio-neon);
+            box-shadow: 0 0 10px rgba(191,255,0,0.40),
+                        inset 0 0 0 3px rgba(10,41,20,0.80);
+        }
+        .filter-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(191,255,0,0.40);
+            background: linear-gradient(135deg, var(--btn-from), var(--btn-to));
+            color: #0A2914;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 0 14px rgba(191,255,0,0.12);
+        }
+        .filter-btn:hover {
+            box-shadow: 0 0 28px rgba(191,255,0,0.30);
+            transform: translateY(-2px);
+        }
+        .filter-clear {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: var(--bio-cyan);
+            font-size: 12px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .filter-clear:hover { color: #fff; }
+
+        /* ══════════════════════════════════════════════
+           ACTIVE FILTER BAR
+        ══════════════════════════════════════════════ */
+        .filter-active-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 12px 18px;
+            background: rgba(191,255,0,0.06);
+            border: 1px solid rgba(191,255,0,0.15);
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            color: var(--text-sec);
+        }
+        .filter-tag {
+            background: rgba(191,255,0,0.12);
+            border: 1px solid rgba(191,255,0,0.30);
+            color: var(--bio-neon);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* ══════════════════════════════════════════════
+           BENEFIT TAGS ON PRODUCT CARDS
+        ══════════════════════════════════════════════ */
+        .product-benefits {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .benefit-tag {
+            background: rgba(0,255,255,0.10);
+            border: 1px solid rgba(0,255,255,0.25);
+            color: var(--bio-cyan);
+            padding: 3px 9px;
+            border-radius: 14px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* ══════════════════════════════════════════════
+           CORDIAL PRICING TABLE
+        ══════════════════════════════════════════════ */
+        .cordial-table-wrap {
+            background: var(--glass-body);
+            backdrop-filter: blur(18px);
+            border-radius: 18px;
+            border: 1px solid rgba(191,255,0,0.25);
+            padding: 28px;
+            box-shadow: 0 0 20px rgba(191,255,0,0.06), 0 8px 32px rgba(0,0,0,0.35);
+        }
+        .cordial-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .cordial-table thead th {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--bio-neon);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 14px;
+            border-bottom: 2px solid rgba(191,255,0,0.25);
+            text-align: center;
+            text-shadow: 0 0 6px rgba(191,255,0,0.25);
+        }
+        .cordial-table tbody td {
+            padding: 14px;
+            font-size: 14px;
+            color: var(--text-prim);
+            border-bottom: 1px solid rgba(191,255,0,0.08);
+            text-align: center;
+        }
+        .cordial-table tbody td:first-child { text-align: left; }
+        .cordial-table tbody tr:hover {
+            background: rgba(191,255,0,0.04);
+        }
+        .cordial-table tbody td strong {
+            text-shadow: 0 0 4px rgba(191,255,0,0.10);
         }
     </style>
+
 </head>
 <body>
     <!-- Bio-breath glow overlay -->

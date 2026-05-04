@@ -238,7 +238,7 @@
     <div class="row g-4 justify-content-center">
         <div class="col-lg-7 reveal">
             <div style="border-radius:18px;overflow:hidden;border:2px solid rgba(191,255,0,0.20);box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3916.5!2d-75.4967!3d-11.7753!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x910e960cae15c0f1%3A0xa459cda3e5ae1ab!2sPlaza%20de%20Armas%20de%20Jauja!5e0!3m2!1ses!2spe!4v1680000000000!5m2!1ses!2spe"
+                <iframe src="https://maps.google.com/maps?q=Jr.+Grau+419,+Jauja+12601,+Junin,+Peru&t=&z=17&ie=UTF8&iwloc=&output=embed"
                         width="100%" height="350" style="border:0;display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
         </div>
@@ -255,7 +255,7 @@
                     <div class="info-glass text-center">
                         <i class="bi bi-geo-alt" style="font-size:28px;color:var(--bio-neon);"></i>
                         <h5 class="mt-2 mb-1" style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;">Ubicación</h5>
-                        <p style="font-size:13px;color:var(--text-sec);margin:0;">Plaza de Armas — Jauja, Junín<br><strong style="color:var(--text-prim);">Perú</strong></p>
+                        <p style="font-size:13px;color:var(--text-sec);margin:0;">Jr. Grau 419 — Jauja 12601<br><strong style="color:var(--text-prim);">Junín, Perú</strong></p>
                     </div>
                 </div>
                 <div class="col-12 reveal">

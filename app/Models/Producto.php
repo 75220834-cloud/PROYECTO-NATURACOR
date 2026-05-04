@@ -24,6 +24,8 @@ class Producto extends Model
     public function sucursal() { return $this->belongsTo(Sucursal::class); }
     public function detalleVentas() { return $this->hasMany(DetalleVenta::class); }
     public function enfermedades() { return $this->belongsToMany(Enfermedad::class, 'enfermedad_producto')->withPivot('instrucciones', 'orden')->withTimestamps(); }
+    public function valoraciones() { return $this->hasMany(Valoracion::class); }
+    public function valoracionesAprobadas() { return $this->hasMany(Valoracion::class)->where('aprobada', true); }
 
     public function tieneStockBajo(): bool
     {

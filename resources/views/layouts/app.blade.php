@@ -1024,6 +1024,20 @@
                 <i class="bi bi-shop"></i><span class="nav-label">Sucursales</span>
             </a>
         </div>
+        <div class="nav-item">
+            <a href="{{ route('logs.index') }}" class="{{ request()->routeIs('logs*') ? 'active' : '' }}">
+                <i class="bi bi-clipboard-data"></i><span class="nav-label">Auditoría</span>
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{{ route('valoraciones.index') }}" class="{{ request()->routeIs('valoraciones*') ? 'active' : '' }}" style="position:relative;">
+                <i class="bi bi-star"></i><span class="nav-label">Valoraciones</span>
+                @php $pendientes = \App\Models\Valoracion::where('aprobada', false)->count(); @endphp
+                @if($pendientes > 0)
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#f59e0b;color:#000;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;">{{ $pendientes }}</span>
+                @endif
+            </a>
+        </div>
         @endif
     </nav>
     <div class="nc-sidebar-footer">v1.0 — NATURACOR © 2026</div>

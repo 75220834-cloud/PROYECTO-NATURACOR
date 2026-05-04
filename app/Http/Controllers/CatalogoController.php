@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\CordialVenta;
 use App\Models\Enfermedad;
+use App\Models\Sucursal;
 
 class CatalogoController extends Controller
 {
     public function index()
     {
         $search     = request('search');
-        $beneficio  = request('beneficio');   // enfermedad_id
-        $tipo       = request('tipo');        // natural | cordial
+        $beneficio  = request('beneficio');
+        $tipo       = request('tipo');
+        $sucursalId = request('sucursal');
 
         $query = Producto::where('activo', true)
             ->where('stock', '>', 0);
@@ -20,29 +22,26 @@ class CatalogoController extends Controller
         if ($search) {
             $query->where('nombre', 'like', '%' . $search . '%');
         }
-
         if ($tipo) {
             $query->where('tipo', $tipo);
         }
-
         if ($beneficio) {
-            $query->whereHas('enfermedades', function ($q) use ($beneficio) {
-                $q->where('enfermedades.id', $beneficio);
-            });
+            $query->whereHas('enfermedades', fn($q) => $q->where('enfermedades.id', $beneficio));
+        }
+        if ($sucursalId) {
+            $query->where('sucursal_id', $sucursalId);
         }
 
-        $productos = $query->with('enfermedades')
+        $productos = $query->with(['enfermedades', 'sucursal', 'valoracionesAprobadas'])
             ->orderBy('tipo')
             ->orderBy('nombre')
             ->get();
 
-        // Beneficios disponibles (enfermedades activas que tienen productos)
         $beneficios = Enfermedad::where('activa', true)
-            ->whereHas('productos', function ($q) {
-                $q->where('activo', true)->where('stock', '>', 0);
-            })
-            ->orderBy('nombre')
-            ->get();
+            ->whereHas('productos', fn($q) => $q->where('activo', true)->where('stock', '>', 0))
+            ->orderBy('nombre')->get();
+
+        $sucursales = Sucursal::where('activa', true)->orderBy('nombre')->get();
 
         $cordiales = collect(CordialVenta::$labels)
             ->filter(fn($label, $key) => $key !== 'invitado')
@@ -54,6 +53,9 @@ class CatalogoController extends Controller
 
         $whatsapp = config('naturacor.empresa.whatsapp', '932857118');
 
-        return view('catalogo.index', compact('productos', 'cordiales', 'whatsapp', 'search', 'beneficios', 'beneficio', 'tipo'));
+        return view('catalogo.index', compact(
+            'productos', 'cordiales', 'whatsapp', 'search',
+            'beneficios', 'beneficio', 'tipo', 'sucursales', 'sucursalId'
+        ));
     }
 }

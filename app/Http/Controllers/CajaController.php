@@ -32,11 +32,21 @@ class CajaController extends Controller
             return back()->with('error', 'Ya tienes una caja abierta.');
         }
 
-        CajaSesion::create([
+        $caja = CajaSesion::create([
             'user_id' => auth()->id(),
             'sucursal_id' => auth()->user()->sucursal_id ?? 1,
             'monto_inicial' => $request->monto_inicial,
             'apertura_at' => now(),
+        ]);
+
+        \App\Models\LogAuditoria::create([
+            'user_id' => auth()->id(),
+            'accion' => 'Abrir caja',
+            'tabla_afectada' => 'caja_sesiones',
+            'registro_id' => $caja->id,
+            'datos_nuevos' => ['monto_inicial' => $request->monto_inicial],
+            'ip' => request()->ip(),
+            'sucursal_id' => auth()->user()->sucursal_id,
         ]);
 
         return back()->with('success', 'Caja abierta correctamente.');
@@ -88,6 +98,16 @@ class CajaController extends Controller
         $sesion->estado = 'cerrada';
         $sesion->notas_cierre = $request->notas;
         $sesion->save();
+
+        \App\Models\LogAuditoria::create([
+            'user_id' => auth()->id(),
+            'accion' => 'Cerrar caja',
+            'tabla_afectada' => 'caja_sesiones',
+            'registro_id' => $sesion->id,
+            'datos_nuevos' => ['monto_real' => $request->monto_real, 'diferencia' => $sesion->diferencia],
+            'ip' => request()->ip(),
+            'sucursal_id' => auth()->user()->sucursal_id,
+        ]);
 
         return redirect()->route('caja.index')->with('success', "Caja cerrada. Diferencia: S/" . number_format($sesion->diferencia, 2));
     }

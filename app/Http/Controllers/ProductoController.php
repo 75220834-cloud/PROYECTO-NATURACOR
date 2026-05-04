@@ -65,7 +65,18 @@ class ProductoController extends Controller
             $data['imagen'] = $this->uploader->upload($request->file('imagen'));
         }
 
-        Producto::create($data);
+        $producto = Producto::create($data);
+
+        \App\Models\LogAuditoria::create([
+            'user_id' => auth()->id(),
+            'accion' => 'Crear producto',
+            'tabla_afectada' => 'productos',
+            'registro_id' => $producto->id,
+            'datos_nuevos' => $producto->toArray(),
+            'ip' => request()->ip(),
+            'sucursal_id' => auth()->user()->sucursal_id,
+        ]);
+
         return redirect()->route('productos.index')->with('success', 'Producto creado correctamente.');
     }
 
@@ -101,12 +112,35 @@ class ProductoController extends Controller
             $data['imagen'] = $this->uploader->upload($request->file('imagen'), $producto->imagen);
         }
 
+        $antes = $producto->toArray();
         $producto->update($data);
+
+        \App\Models\LogAuditoria::create([
+            'user_id' => auth()->id(),
+            'accion' => 'Editar producto',
+            'tabla_afectada' => 'productos',
+            'registro_id' => $producto->id,
+            'datos_anteriores' => $antes,
+            'datos_nuevos' => $producto->fresh()->toArray(),
+            'ip' => request()->ip(),
+            'sucursal_id' => auth()->user()->sucursal_id,
+        ]);
+
         return redirect()->route('productos.index')->with('success', 'Producto actualizado.');
     }
 
     public function destroy(Producto $producto)
     {
+        \App\Models\LogAuditoria::create([
+            'user_id' => auth()->id(),
+            'accion' => 'Eliminar producto',
+            'tabla_afectada' => 'productos',
+            'registro_id' => $producto->id,
+            'datos_anteriores' => $producto->toArray(),
+            'ip' => request()->ip(),
+            'sucursal_id' => auth()->user()->sucursal_id,
+        ]);
+
         $producto->delete();
         return redirect()->route('productos.index')->with('success', 'Producto eliminado.');
     }

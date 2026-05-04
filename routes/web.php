@@ -25,6 +25,7 @@ Route::get('/', fn() => redirect('/catalogo'));
 
 // Catálogo público (sin autenticación)
 Route::get('/catalogo', [CatalogoController::class, 'index'])->name('catalogo');
+Route::post('/catalogo/valorar', [\App\Http\Controllers\ValoracionController::class, 'store'])->name('catalogo.valorar');
 
 // Rutas autenticadas
 Route::middleware(['auth'])->group(function () {
@@ -111,6 +112,14 @@ Route::middleware(['auth'])->group(function () {
         // Usuarios y Sucursales
         Route::resource('sucursales', SucursalController::class);
         Route::resource('usuarios', UsuarioController::class);
+
+        // Auditoría
+        Route::get('/logs', [\App\Http\Controllers\LogAuditoriaController::class, 'index'])->name('logs.index');
+
+        // Valoraciones moderation
+        Route::get('/valoraciones', [\App\Http\Controllers\ValoracionController::class, 'index'])->name('valoraciones.index');
+        Route::patch('/valoraciones/{valoracion}/aprobar', [\App\Http\Controllers\ValoracionController::class, 'aprobar'])->name('valoraciones.aprobar');
+        Route::delete('/valoraciones/{valoracion}', [\App\Http\Controllers\ValoracionController::class, 'rechazar'])->name('valoraciones.rechazar');
     });
 });
 

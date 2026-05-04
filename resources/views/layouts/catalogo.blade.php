@@ -826,6 +826,154 @@
         .cordial-table tbody td strong {
             text-shadow: 0 0 4px rgba(191,255,0,0.10);
         }
+
+        /* ══════════════════════════════════════════════
+           PREMIUM PRODUCT CARDS — 3D HOVER
+        ══════════════════════════════════════════════ */
+        .product-card-premium {
+            background: var(--glass-body);
+            backdrop-filter: blur(18px);
+            border-radius: 20px;
+            border: 1px solid rgba(191,255,0,0.20);
+            overflow: hidden;
+            transition: transform 0.45s cubic-bezier(.23,1,.32,1), box-shadow 0.45s;
+            transform-style: preserve-3d;
+            perspective: 800px;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        }
+        .product-card-premium:hover {
+            transform: translateY(-10px) rotateX(2deg);
+            box-shadow:
+                0 20px 60px rgba(191,255,0,0.12),
+                0 8px 30px rgba(0,0,0,0.40);
+        }
+        .product-img-premium {
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0,40,20,0.60), rgba(10,41,20,0.80));
+        }
+        .product-img-premium img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(.23,1,.32,1), filter 0.5s;
+        }
+        .product-card-premium:hover .product-img-premium img {
+            transform: scale(1.12);
+            filter: brightness(1.1) saturate(1.15);
+        }
+        .emoji-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            opacity: 0.35;
+        }
+        .badge-tipo {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+        .badge-tipo.natural {
+            background: linear-gradient(135deg, #4ade80, #16a34a);
+            color: #052e16;
+            box-shadow: 0 0 12px rgba(74,222,128,0.40);
+        }
+        .badge-tipo.cordial {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #451a03;
+            box-shadow: 0 0 12px rgba(251,191,36,0.40);
+        }
+        .product-body-premium {
+            padding: 20px 22px 24px;
+        }
+        .product-name-premium {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-prim);
+            margin-bottom: 8px;
+            line-height: 1.25;
+        }
+        .product-desc-premium {
+            font-size: 13px;
+            color: var(--text-sec);
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        .product-price-premium {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--bio-neon);
+            text-shadow: 0 0 14px rgba(191,255,0,0.30);
+            margin-bottom: 16px;
+        }
+        .product-price-premium small {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sec);
+            margin-left: 4px;
+        }
+        .btn-whatsapp-premium {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #25d366;
+            background: rgba(37,211,102,0.12);
+            color: #25d366;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .btn-whatsapp-premium:hover {
+            background: #25d366;
+            color: #052e16;
+            box-shadow: 0 0 24px rgba(37,211,102,0.35);
+            transform: translateY(-2px);
+        }
+
+        /* ══════════════════════════════════════════════
+           INFO GLASS CARD
+        ══════════════════════════════════════════════ */
+        .info-glass {
+            background: var(--glass-body);
+            backdrop-filter: blur(18px);
+            border-radius: 18px;
+            border: 1px solid rgba(191,255,0,0.20);
+            padding: 24px;
+            box-shadow: 0 0 16px rgba(191,255,0,0.05), 0 8px 28px rgba(0,0,0,0.30);
+        }
+
+        /* ══════════════════════════════════════════════
+           RESPONSIVE (premium override)
+        ══════════════════════════════════════════════ */
+        @media(max-width: 768px) {
+            .product-img-premium { height: 220px; }
+            .product-name-premium { font-size: 17px; }
+            .product-price-premium { font-size: 22px; }
+        }
     </style>
 
 </head>

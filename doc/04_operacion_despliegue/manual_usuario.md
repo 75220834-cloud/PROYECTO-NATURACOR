@@ -1,8 +1,8 @@
 # Manual de Usuario — NATURACOR
 
 ## Sistema Web de Punto de Venta y Gestión Integral
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Reubicada en `04_operacion_despliegue/`  
 **Estándar de referencia:** ISO 9001:2015 (Orientación al usuario)
 
 ---

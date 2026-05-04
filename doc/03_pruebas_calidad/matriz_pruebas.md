@@ -1,8 +1,8 @@
 # Matriz de Pruebas — NATURACOR
 
 ## Resumen de la Suite de Testing Automatizado
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada con datos reales del código fuente  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Sincronizado con `vendor/bin/phpunit` (350 tests, 1347 aserciones)  
 **Framework:** PHPUnit con atributo `#[Test]` (PHP 8.2+, Laravel 12)  
 **Estándar de referencia:** ISO/IEC/IEEE 29119 (Testing de Software)
 
@@ -13,9 +13,10 @@
 | Métrica | Valor |
 |---------|-------|
 | **Total de archivos de test** | 52 (excluye `ExampleTest`) |
-| **Tests unitarios (Unit)** | 117 tests en 12 archivos |
-| **Tests de integración (Feature)** | 438 tests en 42 archivos |
-| **Total de tests** | **555** |
+| **Tests unitarios (Unit)** | 113 tests en 12 archivos |
+| **Tests de integración (Feature)** | 237 tests en 42 archivos |
+| **Total de tests** | **350** |
+| **Aserciones (run local)** | **1347** |
 | **Tasa de éxito** | 100% |
 | **Entorno de ejecución** | SQLite in-memory (aislamiento total) |
 | **CI/CD** | GitHub Actions (Ubuntu Latest, PHP 8.2) |
@@ -43,7 +44,7 @@ tests/
 │   ├── RecetarioUnitTest.php             ( 7 tests)
 │   ├── VentaUnitTest.php                 ( 8 tests)
 │   └── ExampleTest.php                   ( 1 test — scaffold)
-│                                   Total Unit: 117 tests
+│                                   Total Unit: 113 tests
 │
 ├── Feature/                        ← Tests de integración (HTTP + BD)
 │   ├── AbTestingFlowTest.php             ( 6 tests)
@@ -94,14 +95,14 @@ tests/
 │   └── Jobs/
 │       ├── ReconstruirCoocurrenciaJobTest.php ( 4 tests)
 │       └── ReconstruirPerfilesJobTest.php     ( 6 tests)
-│                                   Total Feature: 438 tests
+│                                   Total Feature: 237 tests
 ```
 
 ---
 
 ## 3. Detalle de Tests por Módulo
 
-### 3.1. Módulo POS — Ventas (53 tests)
+### 3.1. Módulo POS — Ventas (52 tests)
 
 | Archivo | Tipo | Tests | Cobertura funcional |
 |---------|------|:-----:|---------------------|
@@ -354,21 +355,21 @@ jobs:
 ## 5. Resumen por Tipo de Test
 
 ```mermaid
-pie title Distribución de 555 Tests por Módulo
-    "POS + Ventas + Boletas" : 69
-    "Productos" : 54
-    "Clientes" : 43
-    "Fidelización" : 40
-    "Cordiales" : 44
-    "Caja" : 24
-    "IA" : 30
-    "Recetario" : 30
-    "Reclamos" : 33
-    "Recomendación (Tesis)" : 63
-    "Analytics + Forecasting" : 38
-    "Seguridad + Auth" : 21
-    "Admin (CRUD + Dashboard)" : 76
-    "Utilidades" : 8
+pie title Distribución de 350 Tests por Módulo (proporción aprox. vs. suite histórica)
+    "POS + Ventas + Boletas" : 43
+    "Productos" : 33
+    "Clientes" : 26
+    "Fidelización" : 24
+    "Cordiales" : 27
+    "Caja" : 15
+    "IA" : 18
+    "Recetario" : 18
+    "Reclamos" : 20
+    "Recomendación (Tesis)" : 38
+    "Analytics + Forecasting" : 23
+    "Seguridad + Auth" : 13
+    "Admin (CRUD + Dashboard)" : 48
+    "Utilidades" : 4
 ```
 
 ---
@@ -379,10 +380,10 @@ pie title Distribución de 555 Tests por Módulo
 |----------|-------------|-----------|
 | **Cobertura de requerimientos** | ≥ 95% | 69/72 requerimientos con test (95.8%) |
 | **Tasa de éxito** | 100% | CI/CD en verde |
-| **Volumen de tests** | 555 tests | Verificado con `#[Test]` count |
+| **Volumen de tests** | 350 tests | Verificado con `vendor/bin/phpunit` (03/05/2026) |
 | **Tiempo de ejecución** | < 60 segundos | CI/CD con `--parallel` |
 | **Aislamiento** | Total | SQLite in-memory + RefreshDatabase |
 | **Reproducibilidad** | ✅ | Sin dependencias externas en testing |
-| **Trazabilidad** | ✅ | Ver `matriz_trazabilidad.md` |
+| **Trazabilidad** | ✅ | Ver `./matriz_trazabilidad.md` |
 | **Documentación** | ✅ | Este documento + nombres descriptivos en español |
 | **Regresión** | ✅ | Bugs 1-4 con tests de regresión específicos |

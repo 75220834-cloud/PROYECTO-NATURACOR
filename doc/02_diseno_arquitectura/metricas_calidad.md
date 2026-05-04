@@ -1,8 +1,8 @@
 # Métricas de Calidad — NATURACOR
 
 ## Evaluación según ISO/IEC 25010:2023
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Métricas y enlaces a `doc/` por carpetas  
 **Estándar de referencia:** ISO/IEC 25010 (Modelo de Calidad del Producto de Software)
 
 ---
@@ -65,16 +65,16 @@ mindmap
 
 | Métrica | Valor | Evidencia |
 |---------|-------|-----------|
-| **Requerimientos funcionales implementados** | 72 / 72 (100%) | `Documento_Requerimientos_NATURACOR.md` |
+| **Requerimientos funcionales implementados** | 72 / 72 (100%) | `../01_fundamentos/Documento_Requerimientos_NATURACOR.md` |
 | **Módulos operativos** | 13 / 13 (100%) | POS, Inventario, Clientes, Caja, Fidelización, Cordiales, IA, Recetario, Reclamos, Reportes, Sucursales, Usuarios, Dashboard |
 | **Módulos avanzados de tesis** | 6 / 6 (100%) | Recomendador, Co-ocurrencia, A/B Testing, Pronóstico SES, Mapa de calor, Métricas |
-| **Requerimientos rastreados a tests** | 69 / 72 (95.8%) | `matriz_trazabilidad.md` |
+| **Requerimientos rastreados a tests** | 69 / 72 (95.8%) | `../03_pruebas_calidad/matriz_trazabilidad.md` |
 
 ### 2.2. Corrección Funcional
 
 | Métrica | Valor | Evidencia |
 |---------|-------|-----------|
-| **Tests automatizados que pasan** | 555 / 555 (100%) | CI/CD GitHub Actions en verde |
+| **Tests automatizados que pasan** | 350 / 350 (100%) | CI/CD GitHub Actions en verde |
 | **Bugs conocidos sin resolver** | 0 | Todos los bugs documentados (BUG 1-4) están resueltos y testeados |
 | **Cálculo de IGV** | Verificado: `IGV = precio × 18/118` | `VentaTest::venta_calcula_total_con_igv_incluido`, `VentaUnitTest::igv_extraido_del_total_no_sumado` |
 | **Fidelización** | `floor(acumulado / 500)` premios emitidos correctamente | `FidelizacionTest` (12 tests), `FidelizacionCanjeUnitTest` (8 tests) |
@@ -164,7 +164,7 @@ mindmap
 | Métrica | Valor | Referencia |
 |---------|-------|-----------|
 | **Tiempo de capacitación (POS)** | ≤ 2 horas | Requisito RNF-011 |
-| **Manual de usuario completo** | ✅ 16 secciones | `manual_usuario.md` |
+| **Manual de usuario completo** | ✅ 16 secciones | `../04_operacion_despliegue/manual_usuario.md` |
 | **Interfaz consistente** | ✅ Bootstrap 5 con patrones repetidos | Formularios, tablas, alertas |
 | **Mensajes de error descriptivos** | ✅ Validación inline en español | "Stock insuficiente para {nombre}" |
 
@@ -208,9 +208,9 @@ mindmap
 
 | Métrica | Valor | Evidencia |
 |---------|-------|-----------|
-| **Tests automatizados** | 555 | PHPUnit suite completa (52 archivos con `#[Test]`) |
-| **Tests unitarios** | 117 | `tests/Unit/` (12 archivos) |
-| **Tests de integración** | 438 | `tests/Feature/` (42 archivos, incl. subdirectorios) |
+| **Tests automatizados** | 350 | PHPUnit suite completa (52 archivos con `#[Test]`, excl. `ExampleTest`) |
+| **Tests unitarios** | 113 | `tests/Unit/` (12 archivos) |
+| **Tests de integración** | 237 | `tests/Feature/` (42 archivos, incl. subdirectorios) |
 | **Cobertura de código** | Reportada en `coverage.xml` | SonarQube/SonarCloud |
 | **Bugs históricos resueltos** | 4 documentados (BUG 1-4) | Todos con fix + test de regresión |
 
@@ -269,7 +269,7 @@ mindmap
 
 | Métrica | Valor | Evidencia |
 |---------|-------|-----------|
-| **Controladores independientes** | 19 | Cada módulo tiene su controlador |
+| **Controladores de dominio** | 18 | Cada módulo funcional; autenticación vía Breeze en `Auth/` |
 | **Servicios desacoplados** | 8 | `app/Services/` con responsabilidad única |
 | **Modelos Eloquent** | 21 | Uno por tabla, con relaciones explícitas |
 | **Separación de capas** | Controller → Service → Model → DB | Patrón SOC estricto |
@@ -282,7 +282,7 @@ app/
 ├── Exports/             ← Exportación Excel
 ├── Helpers/             ← Funciones utilitarias
 ├── Http/
-│   ├── Controllers/     ← 19 controladores (thin controllers)
+│   ├── Controllers/     ← 18 controladores de negocio + Breeze (thin controllers)
 │   ├── Middleware/       ← RoleMiddleware
 │   └── Requests/        ← Form Requests (Auth)
 ├── Imports/             ← Importación Excel
@@ -360,7 +360,7 @@ app/
 | **Eficiencia de Desempeño** | 🟢 Alto | <500ms promedio, cache inteligente, batch processing |
 | **Compatibilidad** | 🟢 Alto | 6 integraciones externas operativas |
 | **Usabilidad** | 🟢 Alto | Manual completo, capacitación <2h, interfaz Bootstrap responsiva |
-| **Fiabilidad** | 🟢 Alto | 555 tests, 0 bugs pendientes, tolerancia a fallos en IA |
+| **Fiabilidad** | 🟢 Alto | 350 tests, 0 bugs pendientes, tolerancia a fallos en IA |
 | **Seguridad** | 🟢 Alto | RBAC, CSRF, Bcrypt, auditoría, aislamiento por sucursal |
 | **Mantenibilidad** | 🟢 Alto | MVC + Services, 21 modelos, CI/CD, testabilidad completa |
 | **Portabilidad** | 🟢 Alto | Windows/Linux/Cloud, instalación <3 min |
@@ -374,10 +374,10 @@ app/
 | Total de requerimientos funcionales | 72 |
 | Módulos operativos | 13 |
 | Modelos Eloquent | 21 |
-| Controladores | 19 |
+| Controladores (dominio) | 18 |
 | Servicios de dominio | 8 |
 | Tablas en BD | 34 migraciones |
-| Tests automatizados totales | 555 |
+| Tests automatizados totales | 350 |
 | Archivos de test unitario | 12 |
 | Archivos de test de integración | 42 |
 | Tasa de tests exitosos | 100% |

@@ -1,7 +1,7 @@
 # Plan de Pruebas de Software
 
 ## NATURACOR — Sistema Web Empresarial
-**Fecha:** 15/04/2026
+**Fecha de última revisión:** 03/05/2026
 
 ---
 
@@ -13,6 +13,7 @@
 | 05/04/2026 | 1.1 | Julca Laureano Dickmar Wilber | NATURACOR | Incorporación de pruebas de fidelización y cordiales |
 | 08/04/2026 | 1.2 | Reyes Cordero Italo Eduardo | NATURACOR | Actualización de criterios de aceptación y cobertura |
 | 15/04/2026 | 2.0 | Bendezu Lagos Jack Joshua | NATURACOR | Versión final con 180 tests y CI/CD validado |
+| 03/05/2026 | 2.1 | Actualización de documentación | NATURACOR | Suite **350 tests** (113 Unit + 237 Feature), 52 archivos; rutas `doc/03_pruebas_calidad/` |
 
 ---
 
@@ -49,10 +50,10 @@ El presente documento constituye el **Plan de Pruebas de Software** del proyecto
 
 **Alcance en relación con el Plan de Proyecto:** Este plan de pruebas cubre la fase de verificación y validación del ciclo de vida del proyecto, abarcando desde las pruebas unitarias de la lógica de negocio hasta las pruebas de integración de flujos HTTP completos, pasando por pruebas de seguridad, regresión y aceptación.
 
-**Resumen del esfuerzo de pruebas:**
-- **180 casos de prueba automatizados** distribuidos en 20 archivos de test.
-- **121 pruebas de integración (Feature)** que validan flujos HTTP completos, validaciones de formularios, control de acceso por roles y rutas protegidas.
-- **59 pruebas unitarias (Unit)** que verifican la lógica de modelos, cálculos de IGV, relaciones Eloquent, castings y reglas de negocio aisladas.
+**Resumen del esfuerzo de pruebas (estado verificado del repo, 03/05/2026):**
+- **350 casos de prueba automatizados** distribuidos en **52 archivos** de test (`ExampleTest` excluido del cómputo operativo).
+- **237 pruebas de integración (Feature)** que validan flujos HTTP completos, validaciones de formularios, control de acceso por roles y rutas protegidas.
+- **113 pruebas unitarias (Unit)** que verifican la lógica de modelos, cálculos de IGV, relaciones Eloquent, castings y reglas de negocio aisladas.
 - **Pipeline CI/CD** en GitHub Actions que ejecuta automaticamente todos los tests en cada push y pull request a la rama principal.
 
 **Restricciones:**
@@ -172,40 +173,21 @@ La estrategia de pruebas del proyecto NATURACOR se basa en un enfoque de **múlt
 
 #### 1. Pruebas Unitarias (Unit Tests)
 - **Propósito:** Verificar la lógica interna de los modelos Eloquent, métodos de cálculo, accessors, mutators, scopes y relaciones de forma aislada.
-- **Herramienta:** PHPUnit 11.5
-- **Archivos:** 7 archivos en `tests/Unit/`
-- **Cantidad:** 59 tests
-- **Cobertura:**
-  - `ClienteUnitTest` (12 tests): Método `nombreCompleto()`, `puedeReclamarPremio()`, reinicio de acumulados.
-  - `CordialVentaUnitTest` (13 tests): Precios fijos, labels de presentación, tipos acumulables.
-  - `ProductoUnitTest` (10 tests): Cálculo de IGV, stock crítico, soft delete, casts de atributos.
-  - `VentaUnitTest` (8 tests): Boleta correlativa, relaciones con detalles, soft delete.
-  - `FidelizacionCanjeUnitTest` (8 tests): Constantes del programa, scopes, relaciones, entrega de premios.
-  - `RecetarioUnitTest` (7 tests): Pivot enfermedad-producto, instrucciones de uso, ordenamiento.
-  - `ExampleTest` (1 test): Test básico de verificación del entorno.
+- **Herramienta:** PHPUnit 11.5.x
+- **Archivos:** 12 archivos en `tests/Unit/` (incluye `ExampleTest` como scaffold).
+- **Cantidad:** **113 tests** (verificación `vendor/bin/phpunit tests/Unit`, 03/05/2026).
+- **Cobertura:** Servicios de recomendación (`AbTestingServiceTest`, `CoocurrenciaServiceTest`, …), modelos (`VentaUnitTest`, `ProductoUnitTest`, `ClienteUnitTest`, …), helpers y recetario. Desglose exhaustivo por archivo en `matriz_pruebas.md` (misma carpeta que este plan).
 
 #### 2. Pruebas de Integración / Funcionales (Feature Tests)
 - **Propósito:** Validar flujos HTTP completos simulando la interacción real del usuario con el sistema: peticiones GET/POST, validaciones de formularios, redirecciones, control de acceso por roles y respuestas esperadas.
-- **Herramienta:** PHPUnit 11.5 con `RefreshDatabase` trait (SQLite en memoria)
-- **Archivos:** 13 archivos en `tests/Feature/`
-- **Cantidad:** 121 tests
-- **Cobertura principal:**
-  - `SeguridadTest` (16 tests): CSRF, inyección SQL, roles, aislamiento de sucursales.
-  - `FidelizacionTest` (13 tests): Acumulado S/500, canjes, premios, promo litro puro.
-  - `ReclamoTest` (12 tests): Flujo completo de estados, escalado, resolución.
-  - `RecetarioTest` (12 tests): CRUD completo, sincronización de productos, búsqueda.
-  - `CordialTest` (11 tests): Venta de cordial, promoción, cortesía de invitado.
-  - `ProductoCrudTest` (10 tests): CRUD, búsqueda AJAX, alertas de stock bajo.
-  - `IATest` (10 tests): Modo offline, análisis de negocio, estructura de datos.
-  - `VentaTest` (9 tests): POS completo, venta múltiple, IGV, generación de boleta.
-  - `ClienteCrudTest` (8 tests): CRUD, validación DNI único, búsqueda AJAX.
-  - `SucursalCrudTest` (7 tests): CRUD de sucursales restringido al admin.
-  - `CajaTest` (6 tests): Apertura, cierre, movimientos, venta con caja abierta.
-  - `AutenticacionTest` (6 tests): Login, logout, acceso protegido, diferenciación de roles.
+- **Herramienta:** PHPUnit 11.5.x con trait `RefreshDatabase` (SQLite en memoria)
+- **Archivos:** **42 archivos** en `tests/Feature/` más subcarpetas `Analytics/`, `Forecasting/`, `Jobs/`.
+- **Cantidad:** **237 tests** (verificación `vendor/bin/phpunit tests/Feature`, 03/05/2026).
+- **Cobertura principal:** POS (`VentaTest`, `VentaTest2`), inventario (`ProductoCrudTest*`), clientes, caja, fidelización, cordiales, IA, reclamos, recomendación, reportes, admin, seguridad (`SeguridadTest`), etc. Lista completa y conteos por archivo en `matriz_pruebas.md`.
 
 #### 3. Pruebas de Seguridad
 - **Propósito:** Verificar que el sistema está protegido contra las vulnerabilidades más comunes.
-- **Incluido en:** `SeguridadTest.php` (16 tests dedicados)
+- **Incluido en:** `SeguridadTest.php` (15 tests dedicados; total consolidado en `matriz_pruebas.md`)
 - **Aspectos cubiertos:**
   - Protección CSRF en todas las rutas POST.
   - Prevención de inyección SQL a través de Eloquent ORM.
@@ -216,7 +198,7 @@ La estrategia de pruebas del proyecto NATURACOR se basa en un enfoque de **múlt
 
 #### 4. Pruebas de Regresión
 - **Propósito:** Confirmar que las funcionalidades existentes no se ven afectadas por cambios nuevos.
-- **Mecanismo:** La suite completa de 180 tests se ejecuta automáticamente en cada push/PR a través del pipeline CI/CD de GitHub Actions. Cualquier regresión es detectada de inmediato.
+- **Mecanismo:** La suite completa de 350 tests se ejecuta automáticamente en cada push/PR a través del pipeline CI/CD de GitHub Actions. Cualquier regresión es detectada de inmediato.
 
 #### 5. Pruebas de Aceptación del Usuario (UAT)
 - **Propósito:** Validar con la propietaria del negocio que el sistema cumple con sus expectativas.
@@ -226,7 +208,7 @@ La estrategia de pruebas del proyecto NATURACOR se basa en un enfoque de **múlt
 
 | Entorno | Base de datos | Objetivo |
 |---|---|---|
-| Testing (CI/CD) | SQLite en memoria (`:memory:`) | Ejecución rápida, aislada y repetible de los 180 tests |
+| Testing (CI/CD) | SQLite en memoria (`:memory:`) | Ejecución rápida, aislada y repetible de los 350 tests |
 | Desarrollo local | MySQL 8.0 (XAMPP) | Validación con datos reales y persistentes |
 | Producción local | MySQL 8.0 (XAMPP) | Entorno final para la operación diaria |
 
@@ -246,12 +228,12 @@ El Plan de Pruebas de Software se considerará completado exitosamente cuando se
 
 | # | Criterio | Métrica objetivo |
 |---|---|---|
-| 1 | Todos los tests unitarios pasan | 59/59 tests exitosos (100%) |
-| 2 | Todos los tests de integración pasan | 121/121 tests exitosos (100%) |
-| 3 | Total de tests ejecutados | 180/180 tests pasados (100%) |
+| 1 | Todos los tests unitarios pasan | 113/113 tests exitosos (100%) |
+| 2 | Todos los tests de integración pasan | 237/237 tests exitosos (100%) |
+| 3 | Total de tests ejecutados | 350/350 tests pasados (100%) |
 | 4 | Pipeline CI/CD en GitHub Actions | Estado verde ✅ en la rama `main` |
 | 5 | Cobertura de módulos | 10/10 módulos funcionales cubiertos con al menos 1 test |
-| 6 | Pruebas de seguridad | 16/16 pruebas de seguridad exitosas |
+| 6 | Pruebas de seguridad | Suite `SeguridadTest` al 100% + cobertura transversal en Feature |
 | 7 | Defectos críticos | 0 defectos de severidad crítica o bloqueante abiertos |
 | 8 | Defectos mayores | ≤ 2 defectos de severidad mayor abiertos con plan de corrección |
 | 9 | Pruebas de regresión | 0 regresiones detectadas tras correcciones |
@@ -300,8 +282,8 @@ Los siguientes documentos y artefactos serán entregados como resultado de la ej
 | # | Entregable | Descripción | Formato |
 |---|---|---|---|
 | 1 | Plan de Pruebas de Software | El presente documento, que define la estrategia, alcance, criterios y planificación de las pruebas | Documento (Word/PDF) |
-| 2 | Suite de Casos de Prueba Automatizados | 180 tests en 20 archivos PHP organizados en `tests/Unit/` y `tests/Feature/` | Código PHP (PHPUnit) |
-| 3 | Reporte de Ejecución de Tests | Salida de `php artisan test` mostrando los 180 tests con su resultado (passed/failed) | Captura de pantalla / Log de terminal |
+| 2 | Suite de Casos de Prueba Automatizados | 350 tests en 52 archivos PHP organizados en `tests/Unit/` y `tests/Feature/` | Código PHP (PHPUnit) |
+| 3 | Reporte de Ejecución de Tests | Salida de `php artisan test` mostrando los 350 tests con su resultado (passed/failed) | Captura de pantalla / Log de terminal |
 | 4 | Reporte de Pipeline CI/CD | Estado del badge de GitHub Actions (verde/rojo) y log de la última ejecución | Captura de GitHub Actions |
 | 5 | Log de Defectos / Incidencias | Registro de bugs encontrados durante las pruebas con su severidad, estado y resolución | GitHub Issues / Documento |
 | 6 | Evidencias de Pruebas Funcionales | Capturas de pantalla de las funcionalidades probadas: POS, fidelización, reclamos, reportes | Capturas de pantalla (PNG) |
@@ -350,7 +332,7 @@ Los siguientes documentos y artefactos serán entregados como resultado de la ej
 
 | Herramienta | Versión | Tipo | Propósito |
 |---|---|---|---|
-| **PHPUnit** | 11.5.50 | Framework de testing automatizado | Ejecución de 180 tests unitarios y de integración |
+| **PHPUnit** | 11.5.50 | Framework de testing automatizado | Ejecución de 350 tests unitarios y de integración |
 | **GitHub Actions** | N/A (servicio cloud) | Plataforma de CI/CD | Ejecución automática de la suite completa en cada push/PR |
 | **Mockery** | 1.6 | Librería de mocking | Simulación de APIs externas (Groq, Gemini) en los tests |
 | **Faker (FakerPHP)** | 1.23 | Generador de datos ficticios | Generación de datos realistas en las Factories de prueba |
@@ -402,7 +384,7 @@ El equipo seguirá la siguiente metodología de pruebas durante la ejecución de
 - Si algún test falla, se corrige el código antes de subir cambios.
 
 **3. Ejecución Automatizada (CI/CD):**
-- Al hacer push o crear un Pull Request a la rama `main`, GitHub Actions ejecuta automáticamente todos los 180 tests.
+- Al hacer push o crear un Pull Request a la rama `main`, GitHub Actions ejecuta automáticamente todos los 350 tests.
 - El pipeline configura PHP 8.2, instala dependencias con Composer (con cache), configura SQLite en memoria y ejecuta `php artisan test`.
 - Si algún test falla, el pipeline marca el commit como fallido ❌ y el equipo es notificado.
 
@@ -459,7 +441,7 @@ El equipo seguirá la siguiente metodología de pruebas durante la ejecución de
 
 **Hitos relevantes:**
 - ✅ 03/04/2026: Entorno de pruebas configurado y CI/CD operativo.
-- ✅ 10/04/2026: 180 tests implementados y ejecutándose localmente.
+- ✅ 10/04/2026: 350 tests implementados y ejecutándose localmente.
 - ✅ 12/04/2026: Pipeline CI/CD verde en GitHub Actions.
 - ✅ 15/04/2026: Plan de Pruebas aprobado y entregado.
 
@@ -536,7 +518,7 @@ El equipo seguirá la siguiente metodología de pruebas durante la ejecución de
 | **Seeder** | Clase de Laravel que carga datos iniciales en la base de datos, como roles, usuarios de prueba y productos de ejemplo. |
 | **Soft Delete** | Eliminación lógica de un registro (se marca como eliminado con la columna `deleted_at`) sin borrarlo físicamente de la base de datos. |
 | **SQLite en memoria** | Motor de base de datos ligero que almacena todo en la RAM, ideal para tests por su velocidad y aislamiento. Configurado con `:memory:`. |
-| **Suite de Pruebas** | Conjunto organizado de casos de prueba que se ejecutan juntos. En NATURACOR incluye 180 tests en 2 suites: Unit y Feature. |
+| **Suite de Pruebas** | Conjunto organizado de casos de prueba que se ejecutan juntos. En NATURACOR incluye 350 tests en 2 suites: Unit y Feature. |
 | **UAT** | User Acceptance Testing. Pruebas de aceptación realizadas por el usuario final para validar que el sistema cumple con sus expectativas. |
 | **Unit Test** | Prueba unitaria que verifica el comportamiento de un componente individual (modelo, método, cálculo) de forma aislada, sin dependencias externas. |
 | **Xdebug** | Extensión PHP que proporciona capacidades de debugging y generación de reportes de cobertura de código. |

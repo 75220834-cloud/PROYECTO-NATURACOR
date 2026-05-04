@@ -1,8 +1,8 @@
 # Arquitectura Detallada — NATURACOR
 
 ## Sistema Web Empresarial  
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Alineada al código actual (`Http/Controllers`)  
 **Stack:** Laravel 12 + MySQL + Vite + Bootstrap 5
 
 ---
@@ -23,7 +23,7 @@ graph TB
     subgraph "Capa de Aplicación (Laravel)"
         ROUTES["Routes (web.php)"]
         MW["Middleware (auth, role, csrf)"]
-        CTRL["Controllers (19)"]
+        CTRL["Controllers dominio (18) + Breeze (10)"]
         REQUESTS["Form Requests"]
     end
     

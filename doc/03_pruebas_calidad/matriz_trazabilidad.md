@@ -1,8 +1,8 @@
 # Matriz de Trazabilidad de Requerimientos
 
 ## NATURACOR — Sistema Web Empresarial
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Métricas de tests alineadas a PHPUnit  
 **Estándar de referencia:** ISO 9001:2015 (Trazabilidad de requisitos), ISO/IEC/IEEE 29119-3 (Documentación de pruebas)
 
 ---
@@ -199,7 +199,7 @@ Esto permite:
 
 | ID | Descripción | Mecanismo de implementación | Test(s) / Evidencia | Resultado |
 |---|---|---|---|---|
-| RNF-001 | Rendimiento < 3s | Cacheado de recomendaciones, paginación Eloquent | CI/CD < 60s para 555 tests | ✅ PASA |
+| RNF-001 | Rendimiento < 3s | Cacheado de recomendaciones, paginación Eloquent | CI/CD ~30–60s para 350 tests | ✅ PASA |
 | RNF-002 | Disponibilidad 99% | Despliegue Railway.app con healthcheck | Uptime monitoreado | 🔵 N/A |
 | RNF-003 | Autenticación en todas las rutas | Middleware `auth` global, Laravel Breeze | `AutenticacionTest` (6), `SeguridadTest::usuario_no_autenticado_es_redirigido_al_login` | ✅ PASA |
 | RNF-004 | Autorización por roles | Spatie Permission + `RoleMiddleware` | `SeguridadTest` (15 tests de roles y acceso) | ✅ PASA |
@@ -207,8 +207,8 @@ Esto permite:
 | RNF-006 | Prevención inyección SQL | Eloquent ORM + Query Builder | Uso exclusivo de Eloquent/QB verificado en revisión de código | ✅ PASA |
 | RNF-007 | Transacciones de BD | `DB::beginTransaction()` en VentaController | `VentaTest2` (tests de rollback y atomicidad) | ✅ PASA |
 | RNF-008 | Escalabilidad multi-sucursal | `sucursal_id` en todos los modelos | `SucursalCrudTest` (7), `SucursalCrudTest2` (14), `DashboardTest` (17) | ✅ PASA |
-| RNF-009 | Mantenibilidad MVC | Controllers → Services → Models (SOC) | Revisión estructural documentada en `arquitectura.md` | ✅ PASA |
-| RNF-010 | Tests automatizados (cobertura amplia) | PHPUnit con `#[Test]` attributes, CI/CD GitHub Actions | **555 tests** en 52 archivos | ✅ PASA |
+| RNF-009 | Mantenibilidad MVC | Controllers → Services → Models (SOC) | Revisión estructural documentada en `../02_diseno_arquitectura/arquitectura.md` | ✅ PASA |
+| RNF-010 | Tests automatizados (cobertura amplia) | PHPUnit con `#[Test]` attributes, CI/CD GitHub Actions | **350 tests** en 52 archivos activos | ✅ PASA |
 | RNF-011 | Usabilidad | Bootstrap 5, interfaz intuitiva, catálogo público | `CatalogoTest` (5) | ✅ PASA |
 | RNF-012 | Compatibilidad navegadores | Bootstrap 5, Vite, JS estándar | Pruebas manuales Chrome/Firefox/Edge | 🔵 N/A |
 | RNF-014 | Auditoría de acciones críticas | `LogAuditoria` + Observer | `VentaTest2`, `ReclamoTest2` | ✅ PASA |
@@ -223,9 +223,9 @@ Esto permite:
 | **Total de requerimientos rastreados** | 72 |
 | **Requerimientos con test(s)** | 69 (95.8%) |
 | **Requerimientos sin test (N/A)** | 3 (4.2%) — configuración manual y pruebas de navegador |
-| **Archivos de test unitario** | 12 archivos / 117 tests |
-| **Archivos de test de integración (Feature)** | 42 archivos / 438 tests |
-| **Total tests automatizados** | **555** |
+| **Archivos de test unitario** | 12 archivos / 113 tests |
+| **Archivos de test de integración (Feature)** | 42 archivos / 237 tests |
+| **Total tests automatizados** | **350** |
 | **Tasa de éxito** | 100% (CI/CD en verde) |
 | **Framework de testing** | PHPUnit con atributo `#[Test]` (PHP 8.2+) |
 | **BD de testing** | SQLite in-memory (aislamiento total) |
@@ -238,5 +238,5 @@ Esto permite:
 |-------|-------------------|---------------|
 | **ISO 9001:2015** | §7.1.6 Conocimiento organizacional, §8.2 Requisitos del cliente | Trazabilidad bidireccional completa |
 | **ISO/IEC/IEEE 29119-3** | Documentación de pruebas — Diseño de caso de prueba | Vinculación req → test con resultado |
-| **ISO/IEC 25010** | Calidad del producto — todas las subcaracterísticas | Ver `metricas_calidad.md` |
-| **ISO/IEC 27001** | Controles de acceso y auditoría | Ver `seguridad.md` |
+| **ISO/IEC 25010** | Calidad del producto — todas las subcaracterísticas | Ver `../02_diseno_arquitectura/metricas_calidad.md` |
+| **ISO/IEC 27001** | Controles de acceso y auditoría | Ver `../02_diseno_arquitectura/seguridad.md` |

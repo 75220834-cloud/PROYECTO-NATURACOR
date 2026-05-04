@@ -89,7 +89,7 @@ NATURACOR tiene como objetivo principal digitalizar y automatizar las operacione
 - Automatizar el 100% de las operaciones de venta y facturación de la tienda.
 - Implementar un sistema de fidelización alineado con las reglas de negocio 2026 de la propietaria.
 - Alcanzar una cobertura de pruebas automatizadas superior al 85% del código funcional.
-- Garantizar la estabilidad del sistema mediante un pipeline CI/CD con 180 pruebas automatizadas.
+- Garantizar la estabilidad del sistema mediante un pipeline CI/CD con **350** pruebas automatizadas (113 Unit + 237 Feature, estado 03/05/2026).
 - Proveer un sistema seguro con control de acceso basado en roles (administrador y empleado).
 
 **Relación con los objetivos corporativos:** Este sistema se alinea directamente con la estrategia de crecimiento de NATURACOR, que busca expandir su presencia en la región Junín mediante la apertura de nuevas sucursales. La plataforma multi-sucursal permite escalar el negocio sin perder control sobre las operaciones de cada punto de venta.
@@ -101,7 +101,7 @@ NATURACOR tiene como objetivo principal digitalizar y automatizar las operacione
 | # | Título | Autor | Versión | Fecha | Ubicación |
 |---|---|---|---|---|---|
 | 1 | Plan de Proyecto NATURACOR (PMO.doc) | Bendezu Lagos Jack Joshua | 2.0 | 05/04/2026 | Repositorio del proyecto — carpeta raíz |
-| 2 | Plan de Pruebas de Software NATURACOR | Julca Laureano Dickmar Wilber | 2.0 | 15/04/2026 | `Plan_de_Pruebas_NATURACOR.md` |
+| 2 | Plan de Pruebas de Software NATURACOR | Julca Laureano Dickmar Wilber | 2.1 | 03/05/2026 | `../03_pruebas_calidad/Plan_de_Pruebas_NATURACOR.md` |
 | 3 | Formato 06: Requerimientos Funcionales | Bendezu Lagos Jack Joshua | 1.0 | 05/04/2026 | Documentación académica del proyecto |
 | 4 | Formato 04: Modelo BPM Actual (Proceso AS-IS) | Reyes Cordero Italo Eduardo | 1.0 | 03/04/2026 | Documentación académica del proyecto |
 | 5 | Formato 05: Modelo BPM Mejorado (Proceso TO-BE) | Reyes Cordero Italo Eduardo | 1.0 | 03/04/2026 | Documentación académica del proyecto |
@@ -559,7 +559,7 @@ El sistema NATURACOR presenta una interfaz web responsiva desarrollada con **Bla
 
 **RNF-009 — Mantenibilidad:** El código debe seguir el patrón MVC estricto de Laravel, con controladores delgados y lógica de negocio en los modelos. Se debe utilizar el estándar de codificación PSR-12 verificado con Laravel Pint.
 
-**RNF-010 — Testeabilidad:** El sistema debe contar con una suite de pruebas automatizadas de al menos 180 tests distribuidos entre pruebas unitarias y de integración, ejecutados en un pipeline CI/CD.
+**RNF-010 — Testeabilidad:** El sistema debe contar con una suite de pruebas automatizadas de **al menos 300 tests** distribuidos entre pruebas unitarias y de integración, ejecutados en un pipeline CI/CD. *(Estado actual del repositorio: **350 tests**.)*
 
 **RNF-011 — Usabilidad:** La interfaz debe ser intuitiva y utilizable por personal con nivel de experiencia básico en tecnología, requiriendo un máximo de 2 horas de capacitación para la operación completa del POS.
 

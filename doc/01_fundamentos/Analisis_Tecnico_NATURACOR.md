@@ -441,7 +441,7 @@ La materia se llama **Pruebas y Calidad**, así que tu evaluador buscará:
 - ✅ Cobertura mínima 70% en módulos críticos. **Verifica con `php artisan test --coverage`** y reporta el porcentaje.
 - ⚠️ Falta **prueba de carga**: usa `wrk` o `k6` contra `/api/recomendaciones/*` y reporta latencia p50/p95.
 - ⚠️ Falta **prueba de seguridad**: muestra que el endpoint requiere auth, que un empleado de sucursal A no puede ver métricas de sucursal B (esto último requiere fortalecer controlador).
-- ✅ Documentación técnica (este documento + README + `Plan_de_Pruebas_NATURACOR.md` que ya tienes).
+- ✅ Documentación técnica (este documento + README + `../03_pruebas_calidad/Plan_de_Pruebas_NATURACOR.md`).
 
 ---
 
@@ -476,7 +476,7 @@ Si estás de acuerdo con este análisis, te propongo el siguiente orden de ejecu
 **Bloque 3 — Schedule + Jobs (medio día)**
 - 3 jobs encolables.
 - Schedule en `routes/console.php`.
-- Documentación de cron en `guia_despliegue_produccion.md`.
+- Documentación de cron en `../04_operacion_despliegue/guia_despliegue_produccion.md`.
 
 **Bloque 4 — A/B Testing (1 día)**
 - Columna `grupo_ab` en `recomendacion_eventos`.

@@ -1,8 +1,8 @@
 # Casos de Uso — NATURACOR
 
 ## Sistema Web de Punto de Venta y Gestión Integral
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Reubicada en `05_especificacion/`  
 **Estándar de referencia:** UML 2.5, ISO/IEC 25010 (Usabilidad)
 
 ---

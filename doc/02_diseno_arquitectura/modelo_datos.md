@@ -1,8 +1,8 @@
 # Modelo de Datos — NATURACOR
 
 ## Sistema Web Empresarial
-**Fecha:** 28/04/2026  
-**Versión:** 1.1 — Revisada y corregida  
+**Fecha:** 03/05/2026  
+**Versión:** 1.2 — Reubicada en `02_diseno_arquitectura/`  
 **Motor de BD:** MySQL 8.0+ (producción) / SQLite (testing)  
 **ORM:** Eloquent (Laravel 12)
 

@@ -14,6 +14,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
+use Spatie\Permission\Models\Role;
 
 /**
  * Bloque 5 — Tests del schedule semanal + integración con el dashboard.
@@ -102,6 +103,8 @@ class DashboardForecastWidgetTest extends TestCase
         ]);
         // Permiso del dashboard: el seeder real lo crea, pero en este test lo
         // saltamos asignando rol admin si existe; si no, usamos middleware off.
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $user->assignRole('admin');
         $this->actingAs($user);
 
         $resp = $this->get(route('dashboard'));
@@ -137,6 +140,8 @@ class DashboardForecastWidgetTest extends TestCase
 
         (new ActualizarDemandaJob)->handle(app(DemandaForecastService::class));
 
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $user->assignRole('admin');
         $this->actingAs($user);
         $resp = $this->get(route('dashboard'));
 

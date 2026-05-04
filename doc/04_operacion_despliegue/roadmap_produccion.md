@@ -9,7 +9,7 @@
 | Lo que tienes | Estado |
 |---|---|
 | Sistema Laravel 12 completo | ✅ Funcionando en local |
-| 180 tests automatizados | ✅ PHPUnit |
+| 350 tests automatizados | ✅ PHPUnit |
 | CI/CD GitHub Actions | ✅ Pipeline activo |
 | IA con Groq/Gemini + offline | ✅ IAController listo |
 | Multi-sucursal + roles | ✅ Spatie Permission |
@@ -162,7 +162,7 @@ php artisan serve
 
 ---
 
-### PASO 2.1 — Ejecutar los 180 tests automatizados
+### PASO 2.1 — Ejecutar los 350 tests automatizados
 
 ```bash
 php artisan test
@@ -171,7 +171,7 @@ php artisan test
 **Resultado esperado:**
 
 ```
-Tests:    180 passed (X assertions)
+Tests:    350 passed (1347 assertions)
 Duration: ~25s
 ```
 
@@ -508,10 +508,10 @@ Vuelve a la tabla de la Fase 2 (Paso 2.4) y marca con ✅ todas las pruebas que 
 
 | Documento | Archivo | Estado |
 |---|---|---|
-| Requisitos de Software (SRS) | [Documento_Requerimientos_NATURACOR.md](file:///d:/ESCRITORIO/UNIVERSIDAD/7mo%20ciclo/PRUEBAS%20Y%20CALIDAD%20DE%20SOFTWARE/PROYECTO%20NATURACOR/naturacor/Documento_Requerimientos_NATURACOR.md) | ✅ Tienes |
-| Plan de Pruebas | [Plan_de_Pruebas_NATURACOR.md](file:///d:/ESCRITORIO/UNIVERSIDAD/7mo%20ciclo/PRUEBAS%20Y%20CALIDAD%20DE%20SOFTWARE/PROYECTO%20NATURACOR/naturacor/Plan_de_Pruebas_NATURACOR.md) | ✅ Tienes |
-| README profesional | [README.md](file:///d:/ESCRITORIO/UNIVERSIDAD/7mo%20ciclo/PRUEBAS%20Y%20CALIDAD%20DE%20SOFTWARE/PROYECTO%20NATURACOR/naturacor/README.md) | ✅ Tienes |
-| 180 tests automatizados | `tests/Feature/` + `tests/Unit/` | ✅ Tienes |
+| Requisitos de Software (SRS) | [Documento_Requerimientos_NATURACOR.md](../01_fundamentos/Documento_Requerimientos_NATURACOR.md) | ✅ Tienes |
+| Plan de Pruebas | [Plan_de_Pruebas_NATURACOR.md](../03_pruebas_calidad/Plan_de_Pruebas_NATURACOR.md) | ✅ Tienes |
+| README profesional | [README.md](../../README.md) | ✅ Tienes |
+| 350 tests automatizados | `tests/Feature/` + `tests/Unit/` | ✅ Tienes |
 | CI/CD Pipeline | `.github/workflows/tests.yml` | ✅ Tienes |
 | Evidencia de producción | `evidencias/` | ⬜ Crear ahora |
 | Evidencia WhatsApp | `evidencias/` | ⬜ Crear ahora |

@@ -4,14 +4,14 @@
 <div class="d-flex align-items-center gap-3 mb-4">
     <a href="{{ route('recetario.show', $recetario) }}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i></a>
     <div>
-        <h4 class="fw-bold mb-0" style="color:#1a2e1a">✏️ Editar: {{ $recetario->nombre }}</h4>
+        <h4 class="fw-bold mb-0">✏️ Editar: {{ $recetario->nombre }}</h4>
     </div>
 </div>
 
 <div class="row justify-content-center">
 <div class="col-lg-8">
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-body p-4">
+<div class="nc-card" style="border-radius:18px;">
+    <div style="padding:28px;">
         <form action="{{ route('recetario.update', $recetario) }}" method="POST">
             @csrf @method('PUT')
             <div class="row g-3 mb-4">
@@ -85,7 +85,7 @@ document.getElementById('addBtn').addEventListener('click', function() {
             <input type="hidden" name="productos[${nextIdx}][id]" value="${id}">
             <input type="text" name="productos[${nextIdx}][instrucciones]" class="form-control form-control-sm mt-1 rounded-2" placeholder="Instrucciones de uso...">
         </div>
-        <button type="button" class="btn btn-sm btn-light text-danger" onclick="this.parentElement.remove()">✕</button>
+        <button type="button" class="btn btn-sm text-danger" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);" onclick="this.parentElement.remove()">✕</button>
     `;
     container.appendChild(row);
     nextIdx++;

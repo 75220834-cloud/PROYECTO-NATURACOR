@@ -4,15 +4,15 @@
 <div class="d-flex align-items-center gap-3 mb-4">
     <a href="{{ route('recetario.index') }}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i></a>
     <div>
-        <h4 class="fw-bold mb-0" style="color:#1a2e1a">📖 Nueva Entrada en Recetario</h4>
-        <small class="text-muted">Registrar enfermedad y productos recomendados</small>
+        <h4 class="fw-bold mb-0">📖 Nueva Entrada en Recetario</h4>
+        <small style="color:rgba(255,255,255,0.45);">Registrar enfermedad y productos recomendados</small>
     </div>
 </div>
 
 <div class="row justify-content-center">
 <div class="col-lg-8">
-<div class="card border-0 shadow-sm rounded-4">
-    <div class="card-body p-4">
+<div class="nc-card" style="border-radius:18px;">
+    <div style="padding:28px;">
         <form action="{{ route('recetario.store') }}" method="POST" id="recetarioForm">
             @csrf
             <div class="row g-3 mb-4">
@@ -90,13 +90,14 @@ document.getElementById('confirmarProducto').addEventListener('click', function(
     const container = document.getElementById('productosContainer');
     const row = document.createElement('div');
     row.className = 'd-flex align-items-center gap-2 mb-2 p-3 rounded-3';
-    row.style.background = '#f0fdf4';
+    row.style.background = 'rgba(40,199,111,0.12)';
+    row.style.border = '1px solid rgba(40,199,111,0.25)';
     row.innerHTML = `
         <div class="flex-grow-1">
-            <div class="fw-semibold" style="font-size:13px;">🌿 ${nombre}</div>
-            ${instrucciones ? `<small class="text-muted">${instrucciones}</small>` : ''}
+            <div class="fw-semibold" style="font-size:13px;color:rgba(255,255,255,0.9);">🌿 ${nombre}</div>
+            ${instrucciones ? `<small style="color:rgba(255,255,255,0.5);">${instrucciones}</small>` : ''}
         </div>
-        <button type="button" class="btn btn-sm btn-light text-danger" onclick="this.parentElement.remove(); removeProducto(${idx})">✕</button>
+        <button type="button" class="btn btn-sm text-danger" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);" onclick="this.parentElement.remove(); removeProducto(${idx})">✕</button>
         <input type="hidden" name="productos[${idx}][id]" value="${id}">
         <input type="hidden" name="productos[${idx}][instrucciones]" value="${instrucciones}">
     `;

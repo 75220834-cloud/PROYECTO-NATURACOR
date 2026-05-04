@@ -68,7 +68,7 @@
         /* ══ SIDEBAR ════════════════════════════════════════════════ */
         .nc-sidebar {
             width: var(--sidebar-w);
-            min-height: 100vh;
+            height: 100vh;
             background: rgba(7, 26, 16, 0.55);
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
@@ -81,6 +81,7 @@
             border-right: 1px solid rgba(255,255,255,0.07);
             box-shadow: 4px 0 40px rgba(0,0,0,0.45),
                         inset -1px 0 0 rgba(40,199,111,0.08);
+            overflow: hidden;
         }
         .nc-sidebar.collapsed { width: var(--sidebar-collapsed); }
 

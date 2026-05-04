@@ -1041,7 +1041,7 @@
         </div>
         @endif
     </nav>
-    <div class="nc-sidebar-footer">v1.0 — NATURACOR © 2026</div>
+    <div class="nc-sidebar-footer">v1.3 — NATURACOR © 2026</div>
 </aside>
 
 <!-- ══ TOPBAR ══ -->

@@ -1,25 +1,12 @@
-// ***********************************************
-// This example commands.js shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+// Comandos reutilizables para E2E NATURACOR (solo UI, sin tocar el backend).
+
+/**
+ * Inicia sesión por el formulario web (igual que un usuario humano).
+ * No guarda contraseñas en logs de Cypress (log: false en el password).
+ */
+Cypress.Commands.add('naturacorLogin', (email, password) => {
+    cy.visit('/login');
+    cy.get('#email').should('be.visible').clear().type(email);
+    cy.get('#password').should('be.visible').clear().type(password, { log: false });
+    cy.get('#btnLogin').should('be.visible').click();
+});

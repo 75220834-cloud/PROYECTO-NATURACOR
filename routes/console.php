@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Schedule;
  * Ejecutar: php artisan limpiar:ventas
  */
 
-Artisan::command('limpiar:ventas', function () {
-    if (!$this->confirm('⚠️ ¿Seguro que deseas ELIMINAR TODAS las ventas, cordiales, canjes y logs? Esta acción NO se puede deshacer.')) {
+Artisan::command('limpiar:ventas {--force}', function () {
+    if (!$this->option('force') && !$this->confirm('⚠️ ¿Seguro que deseas ELIMINAR TODAS las ventas, cordiales, canjes y logs? Esta acción NO se puede deshacer.')) {
         $this->info('Operación cancelada.');
         return;
     }
